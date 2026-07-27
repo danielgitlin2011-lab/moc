@@ -20,7 +20,7 @@ const expectedRoutes = [
 ];
 
 test("the production bundle and complete customer journey are present", async () => {
-  await access(new URL("dist/server/index.js", root));
+  await access(new URL(".next/BUILD_ID", root));
   await Promise.all(expectedRoutes.map(route => access(new URL(route, root))));
 
   const [landing, publicSite, preview] = await Promise.all([
@@ -68,15 +68,9 @@ test("theme switches customers can toggle actually change the rendered site", as
   }
 });
 
-test("image uploads are validated, stored, and delivered through the MEDIA binding", async () => {
-  const [uploadRoute, mediaRoute, hosting] = await Promise.all([
-    readFile(new URL("app/api/uploads/route.ts", root), "utf8"),
-    readFile(new URL("app/api/uploads/[key]/route.ts", root), "utf8"),
-    readFile(new URL(".openai/hosting.json", root), "utf8"),
-  ]);
+test("image uploads are validated and stored via Vercel Blob", async () => {
+  const uploadRoute = await readFile(new URL("app/api/uploads/route.ts", root), "utf8");
   assert.match(uploadRoute, /allowedTypes/);
-  assert.match(uploadRoute, /env\.MEDIA\.put/);
-  assert.match(mediaRoute, /env\.MEDIA\.get/);
-  assert.match(mediaRoute, /max-age=31536000/);
-  assert.equal(JSON.parse(hosting).r2, "MEDIA");
+  assert.match(uploadRoute, /@vercel\/blob/);
+  assert.match(uploadRoute, /put\(/);
 });

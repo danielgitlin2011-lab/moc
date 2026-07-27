@@ -63,12 +63,12 @@ Authentication, domain connections, notifications, subscriptions, and future quo
 - `lib/types.ts` defines the domain interfaces: `Business`, `BusinessTheme`, `WebsiteSection`, `ServiceOffering`, `ProcessStep`, `TeamMember`, `Testimonial`, `FaqEntry`, `StatHighlight`, `MenuCategory`, `MenuItem`, `GalleryImage`, `Lead`, `LeadNote`, and `Subscription`.
 - `lib/demo-data.ts` is the centralized seeded dataset.
 - `components/app-provider.tsx` owns local application state and safe browser persistence.
-- `components/image-uploader.tsx` optimizes customer images in the browser and uploads them to the configured Sites object-storage binding.
-- `app/api/uploads/` provides validated image upload and cacheable media-delivery endpoints.
+- `components/image-uploader.tsx` optimizes customer images in the browser and uploads them via Vercel Blob.
+- `app/api/uploads/` provides a validated image upload endpoint backed by Vercel Blob.
 
 All edits persist to the `servesite-demo-v3` key in `localStorage`. Initial rendering is server-safe, and the provider hydrates saved data only in the browser. The storage boundary is centralized so it can later be replaced by a Supabase repository without rewriting the route components.
 
-Uploaded image files are stored in the `MEDIA` object-storage binding. Users can upload a logo, hero and story photography, menu-item images, and gallery images. Large photographs are resized and converted to WebP before upload.
+Uploaded image files are stored in Vercel Blob storage. Users can upload a logo, hero and story photography, menu-item images, and gallery images. Large photographs are resized and converted to WebP before upload.
 
 ## What a customer can put on their site
 

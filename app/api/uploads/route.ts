@@ -1,7 +1,13 @@
-import { env } from "cloudflare:workers";
+import { put } from "@vercel/blob";
 
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const extensionByType: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -17,18 +23,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Images must be smaller than 8 MB." }, { status: 413 });
   }
 
-  const extensionByType: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/gif": "gif",
-  };
   const extension = extensionByType[file.type];
   const key = `${crypto.randomUUID()}.${extension}`;
-  await env.MEDIA.put(key, file.stream(), {
-    httpMetadata: { contentType: file.type },
-    customMetadata: { originalName: file.name.slice(0, 120) },
+  const blob = await put(key, file, {
+    access: "public",
+    contentType: file.type,
   });
 
-  return Response.json({ url: `/api/uploads/${key}` });
+  return Response.json({ url: blob.url });
 }
