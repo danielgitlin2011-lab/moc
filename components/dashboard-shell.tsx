@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   ExternalLink,
+  FileText,
   Globe2,
   Images,
   LayoutDashboard,
@@ -17,12 +18,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { BrandMark } from "./ui";
-import { cn } from "@/lib/utils";
+import { businessInitials, cn } from "@/lib/utils";
 import { useApp } from "./app-provider";
 
 const navigation = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/website", label: "Website", icon: Globe2 },
+  { href: "/dashboard/content", label: "Content", icon: FileText },
   { href: "/dashboard/design", label: "Design", icon: Paintbrush },
   { href: "/dashboard/menu", label: "Menu", icon: MenuSquare },
   { href: "/dashboard/gallery", label: "Gallery", icon: Images },
@@ -47,11 +49,11 @@ export function DashboardShell({ children, title, description, actions }: { chil
         })}
       </nav>
       <div className="sidebar-site-card">
-        <div><span className="status-dot" /><small>Website live</small></div>
+        <div><span className={cn("status-dot", !state.business.published && "offline")} /><small>{state.business.published ? "Website live" : "Not published yet"}</small></div>
         <strong>{state.business.name}</strong>
         <Link href={`/site/${state.business.slug}`}>View website <ExternalLink size={14} /></Link>
       </div>
-      <div className="sidebar-account"><div>OE</div><span><strong>Olivia Ember</strong><small>Business plan</small></span></div>
+      <div className="sidebar-account"><div>{businessInitials(state.business.name)}</div><span><strong>Account owner</strong><small>{state.subscription.plan} plan · {state.subscription.status}</small></span></div>
     </>
   );
 

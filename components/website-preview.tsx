@@ -2,22 +2,38 @@
 
 import { ArrowRight } from "lucide-react";
 import { useApp } from "./app-provider";
+import { businessInitials, fontStack } from "@/lib/utils";
 
 export function WebsitePreview({ scale = "normal" }: { scale?: "normal" | "small" }) {
   const { state } = useApp();
-  const { business, theme, sections, menuItems, gallery } = state;
-  const visible = (id: string) => sections.find(section => section.id === id)?.visible;
-  const hero = sections.find(section => section.id === "hero");
-  const about = sections.find(section => section.id === "about");
+  const { business, theme, sections, services, stats, menuItems, gallery } = state;
+  const section = (id: string) => sections.find(entry => entry.id === id);
+  const visible = (id: string) => section(id)?.visible;
+  const hero = section("hero");
+  const about = section("about");
   return (
-    <div className={`website-preview ${scale === "small" ? "preview-small" : ""}`} style={{ "--preview-primary": theme.primary, "--preview-accent": theme.accent, "--preview-radius": theme.imageCorners === "rounded" ? "20px" : theme.imageCorners === "soft" ? "7px" : "0px" } as React.CSSProperties}>
-      <div className="preview-site-nav"><strong>O&amp;E</strong><div><span>About</span><span>Menus</span><span>Gallery</span></div><b>Plan your event</b></div>
-      {visible("hero") && <div className="preview-site-hero"><img src={theme.heroImage} alt="" /><div><small>{business.type} · Miami</small><h2>{hero?.title}</h2><p>{hero?.body}</p><b>Plan your event <ArrowRight size={11} /></b></div></div>}
-      {visible("about") && <div className="preview-site-about"><span>OUR TABLE</span><h3>{about?.title}</h3><p>{business.description}</p></div>}
-      {visible("services") && <div className="preview-site-services"><h3>Made for your kind of gathering</h3><div><span>Weddings</span><span>Private dinners</span><span>Corporate catering</span></div></div>}
-      {visible("menus") && <div className="preview-site-menu"><span>FROM THE KITCHEN</span><h3>Menus your guests will remember</h3><div>{menuItems.slice(0, 3).map(item => <article key={item.id}><img src={item.image} alt="" /><strong>{item.name}</strong><small>{item.price}</small></article>)}</div></div>}
+    <div
+      className={`website-preview template-${theme.template} ${scale === "small" ? "preview-small" : ""}`}
+      style={{
+        "--preview-primary": theme.primary,
+        "--preview-accent": theme.accent,
+        "--preview-surface": theme.surface,
+        "--preview-heading": fontStack(theme.headingFont),
+        "--preview-radius": theme.imageCorners === "rounded" ? "20px" : theme.imageCorners === "soft" ? "7px" : "0px",
+      } as React.CSSProperties}
+    >
+      <div className="preview-site-nav">
+        <strong>{business.logo ? <img src={business.logo} alt="" /> : businessInitials(business.name)}</strong>
+        <div>{["about", "menus", "gallery"].filter(visible).map(id => <span key={id}>{section(id)?.label}</span>)}</div>
+        <b>{section("quote")?.ctaLabel || "Plan your event"}</b>
+      </div>
+      {visible("hero") && <div className="preview-site-hero"><img src={theme.heroImage} alt="" /><div><small>{hero?.eyebrow}</small><h2>{hero?.title}</h2><p>{hero?.body}</p><b>{hero?.ctaLabel || "Plan your event"} <ArrowRight size={11} /></b></div></div>}
+      {visible("stats") && stats.length > 0 && <div className="preview-site-stats">{stats.slice(0, 4).map(stat => <span key={stat.id}><strong>{stat.value}</strong>{stat.label}</span>)}</div>}
+      {visible("about") && <div className="preview-site-about"><span>{about?.eyebrow?.toUpperCase()}</span><h3>{about?.title}</h3><p>{business.description}</p></div>}
+      {visible("services") && services.length > 0 && <div className="preview-site-services"><h3>{section("services")?.title}</h3><div>{services.slice(0, 3).map(service => <span key={service.id}>{service.title}</span>)}</div></div>}
+      {visible("menus") && <div className="preview-site-menu"><span>{section("menus")?.eyebrow?.toUpperCase()}</span><h3>{section("menus")?.title}</h3><div>{menuItems.filter(item => item.available).slice(0, 3).map(item => <article key={item.id}><img src={item.image} alt="" /><strong>{item.name}</strong><small>{theme.showMenuPrices ? item.price : item.pricingUnit}</small></article>)}</div></div>}
       {visible("gallery") && <div className="preview-site-gallery">{gallery.slice(0, 3).map(image => <img src={image.url} alt="" key={image.id} />)}</div>}
-      {visible("quote") && <div className="preview-site-quote"><span>BEGIN A CONVERSATION</span><h3>Tell us about your event</h3><b>Request a quote</b></div>}
+      {visible("quote") && <div className="preview-site-quote"><span>{section("quote")?.eyebrow?.toUpperCase()}</span><h3>{section("quote")?.title}</h3><b>{section("quote")?.ctaLabel || "Request a quote"}</b></div>}
     </div>
   );
 }

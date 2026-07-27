@@ -5,7 +5,7 @@ import { CheckCircle2, X } from "lucide-react";
 import { initialData } from "@/lib/demo-data";
 import type { AppState } from "@/lib/types";
 
-const STORAGE_KEY = "servesite-demo-v1";
+const STORAGE_KEY = "servesite-demo-v3";
 
 interface AppContextValue {
   state: AppState;
@@ -26,7 +26,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const timer = window.setTimeout(() => {
       try {
         const saved = window.localStorage.getItem(STORAGE_KEY);
-        if (saved) setState(JSON.parse(saved) as AppState);
+        if (saved) {
+          const parsed = JSON.parse(saved) as Partial<AppState>;
+          const savedSections = parsed.sections || [];
+          // A collection saved as an empty array is a deliberate choice; a missing one means the
+          // stored snapshot predates that collection, so fall back to the seeded content.
+          const collection = <K extends "services" | "testimonials" | "faqs" | "stats" | "processSteps" | "team">(key: K) =>
+            Array.isArray(parsed[key]) ? (parsed[key] as AppState[K]) : initialData[key];
+          setState({
+            ...initialData,
+            ...parsed,
+            services: collection("services"),
+            testimonials: collection("testimonials"),
+            faqs: collection("faqs"),
+            stats: collection("stats"),
+            processSteps: collection("processSteps"),
+            team: collection("team"),
+            business: {
+              ...initialData.business,
+              ...parsed.business,
+              social: { ...initialData.business.social, ...parsed.business?.social },
+              openingHours: parsed.business?.openingHours?.length ? parsed.business.openingHours : initialData.business.openingHours,
+            },
+            theme: { ...initialData.theme, ...parsed.theme },
+            notifications: { ...initialData.notifications, ...parsed.notifications },
+            sections: initialData.sections.map(defaultSection => ({
+              ...defaultSection,
+              ...savedSections.find(section => section.id === defaultSection.id),
+            })),
+          });
+        }
       } catch {
         window.localStorage.removeItem(STORAGE_KEY);
       } finally {

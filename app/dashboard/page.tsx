@@ -13,8 +13,8 @@ export default function DashboardPage() {
   const newLeads = state.leads.filter(lead => lead.status === "New");
   const mostViewed = [...state.menuItems].sort((a, b) => b.views - a.views)[0];
   return (
-    <DashboardShell title="Good morning, Olivia" description="Here’s what’s happening with Olive & Ember today." actions={<LinkButton href="/dashboard/website">Edit website</LinkButton>}>
-      <section className="status-banner"><div className="status-banner-icon"><Globe2 size={23} /></div><div><span><i /> Your website is live</span><h2>olive-and-ember.servesite.co</h2><p>Last published today at 9:42 AM</p></div><Link href="/site/olive-and-ember">View live site <ArrowRight size={16} /></Link></section>
+    <DashboardShell title={`Good morning, ${state.business.name}`} description="Here’s what’s happening with your business today." actions={<LinkButton href="/dashboard/website">Edit website</LinkButton>}>
+      <section className="status-banner"><div className="status-banner-icon"><Globe2 size={23} /></div><div><span><i /> Your website is live</span><h2>{state.business.slug}.servesite.co</h2><p>Last published today at 9:42 AM</p></div><Link href={`/site/${state.business.slug}`}>View live site <ArrowRight size={16} /></Link></section>
       <section className="metrics-grid">
         <Metric icon={Eye} label="Website views" value="1,284" note="+18% from last month" positive />
         <Metric icon={MessageSquareText} label="Quote requests" value={String(state.leads.length + 9)} note="4 this week" />
