@@ -1,0 +1,40 @@
+"use client";
+
+import { Bell, Check, ChevronRight, CircleAlert, CreditCard, DatabaseBackup, Globe2, Save, Settings2, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { useApp } from "@/components/app-provider";
+import { Badge, Button, Field } from "@/components/ui";
+import { cn } from "@/lib/utils";
+
+type SettingsTab = "business" | "domain" | "notifications" | "subscription";
+
+export default function SettingsPage() {
+  const { state, setState, reset, notify } = useApp();
+  const [tab, setTab] = useState<SettingsTab>("business");
+  const [confirmReset, setConfirmReset] = useState(false);
+  const updateBusiness = (key: keyof typeof state.business, value: string | string[]) => setState(current => ({ ...current, business: { ...current.business, [key]: value } }));
+  return (
+    <DashboardShell title="Settings" description="Manage your business profile, domain, notifications, and plan." actions={<Button onClick={() => notify("Settings saved")}><Save size={16} /> Save changes</Button>}>
+      <div className="settings-layout">
+        <nav className="settings-nav" aria-label="Settings sections">
+          <button className={cn(tab === "business" && "active")} onClick={() => setTab("business")}><Settings2 size={17} /><span><strong>Business details</strong><small>Profile and contact information</small></span><ChevronRight size={15} /></button>
+          <button className={cn(tab === "domain" && "active")} onClick={() => setTab("domain")}><Globe2 size={17} /><span><strong>Domain</strong><small>Website address and DNS</small></span><ChevronRight size={15} /></button>
+          <button className={cn(tab === "notifications" && "active")} onClick={() => setTab("notifications")}><Bell size={17} /><span><strong>Notifications</strong><small>Lead and summary alerts</small></span><ChevronRight size={15} /></button>
+          <button className={cn(tab === "subscription" && "active")} onClick={() => setTab("subscription")}><CreditCard size={17} /><span><strong>Subscription</strong><small>Plan and billing</small></span><ChevronRight size={15} /></button>
+          <div className="demo-reset-card"><DatabaseBackup size={18} /><div><strong>Demo data</strong><p>Restore all business, website, menu, gallery, and lead data to its original state.</p></div>{confirmReset ? <div className="reset-confirm"><span>Are you sure?</span><button onClick={() => setConfirmReset(false)}>Cancel</button><button onClick={() => { reset(); setConfirmReset(false); }}>Reset everything</button></div> : <button onClick={() => setConfirmReset(true)}>Reset demo data</button>}</div>
+        </nav>
+        <section className="settings-panel">
+          {tab === "business" && <><div className="settings-heading"><span>Business profile</span><h2>Business details</h2><p>This information appears across your website and quote experience.</p></div><div className="settings-form"><Field label="Business name"><input value={state.business.name} onChange={e => updateBusiness("name", e.target.value)} /></Field><Field label="Description"><textarea rows={5} value={state.business.description} onChange={e => updateBusiness("description", e.target.value)} /></Field><div className="form-grid"><Field label="Email"><input type="email" value={state.business.email} onChange={e => updateBusiness("email", e.target.value)} /></Field><Field label="Phone"><input value={state.business.phone} onChange={e => updateBusiness("phone", e.target.value)} /></Field><Field label="WhatsApp"><input value={state.business.whatsapp} onChange={e => updateBusiness("whatsapp", e.target.value)} /></Field><Field label="Address"><input value={state.business.address} onChange={e => updateBusiness("address", e.target.value)} /></Field></div><Field label="Service areas" hint="Separate service areas with commas"><input value={state.business.serviceAreas.join(", ")} onChange={e => updateBusiness("serviceAreas", e.target.value.split(",").map(value => value.trim()).filter(Boolean))} /></Field></div></>}
+          {tab === "domain" && <><div className="settings-heading"><span>Your website address</span><h2>Domain</h2><p>Use your ServeSite address now, then connect a custom domain when you’re ready.</p></div><div className="domain-current"><div><Globe2 size={20} /><span><small>Current demo subdomain</small><strong>olive-and-ember.servesite.co</strong></span></div><Badge tone="green"><Check size={13} /> Connected</Badge></div><div className="domain-connect"><h3>Connect a custom domain</h3><p>Enter a domain you already own. This prototype simulates the connection steps.</p><div><input placeholder="www.yourcateringbusiness.com" /><Button onClick={() => notify("Domain connection simulated")}>Connect domain</Button></div></div><div className="dns-placeholder"><div><ShieldCheck size={21} /><span><strong>DNS instructions</strong><p>After starting a connection, you’ll receive CNAME and verification records to add at your domain provider.</p></span></div><Badge>Placeholder</Badge></div></>}
+          {tab === "notifications" && <><div className="settings-heading"><span>Stay informed</span><h2>Notifications</h2><p>Choose what ServeSite should send and where.</p></div><div className="notification-list"><NotificationToggle title="Email for new leads" body={`Send every quote request to ${state.business.email}.`} checked={state.notifications.emailLeads} onChange={value => setState(current => ({ ...current, notifications: { ...current.notifications, emailLeads: value } }))} /><NotificationToggle title="WhatsApp notification" body="Receive a WhatsApp alert when a lead arrives. Coming soon." checked={state.notifications.whatsapp} onChange={value => setState(current => ({ ...current, notifications: { ...current.notifications, whatsapp: value } }))} comingSoon /><NotificationToggle title="Weekly performance summary" body="A Monday recap of views, inquiries, and menu engagement." checked={state.notifications.weeklySummary} onChange={value => setState(current => ({ ...current, notifications: { ...current.notifications, weeklySummary: value } }))} /></div></>}
+          {tab === "subscription" && <><div className="settings-heading"><span>Plan and billing</span><h2>Subscription</h2><p>Your demo account is currently exploring the Business plan.</p></div><div className="current-plan"><div><span>Current plan</span><h3>{state.subscription.plan}</h3><p>Unlimited menu items, lead management, galleries, and advanced inquiries.</p></div><div><Badge tone="gold">{state.subscription.status}</Badge><strong>₪{state.subscription.price}<small>/month</small></strong></div></div><div className="upgrade-list"><article><div><h3>Starter</h3><p>Everything needed to launch a professional catering site.</p></div><strong>₪149<small>/month</small></strong><Button variant="secondary" onClick={() => notify("Plan changes are simulated in this prototype")}>Choose Starter</Button></article><article className="selected"><div><h3>Business</h3><p>Lead management, unlimited menus, galleries, and more.</p></div><strong>₪249<small>/month</small></strong><Badge tone="green">Current plan</Badge></article><article><div><h3>Pro</h3><p>Deposits, automated quotes, and team members. Coming soon.</p></div><strong>₪449<small>/month</small></strong><Button variant="secondary" onClick={() => notify("Pro features are coming soon")}>Join waitlist</Button></article></div><div className="billing-note"><CircleAlert size={18} /><p>No payment processing is connected in this prototype. Plan actions are safe demo interactions.</p></div></>}
+        </section>
+      </div>
+    </DashboardShell>
+  );
+}
+
+function NotificationToggle({ title, body, checked, onChange, comingSoon }: { title: string; body: string; checked: boolean; onChange: (value: boolean) => void; comingSoon?: boolean }) {
+  return <label><span><strong>{title}{comingSoon && <Badge>Coming soon</Badge>}</strong><small>{body}</small></span><span className="switch"><input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} /><i /></span></label>;
+}
