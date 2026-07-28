@@ -8,7 +8,7 @@ import { WebsitePreview } from "@/components/website-preview";
 import { useApp } from "@/components/app-provider";
 import { Button, Field } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { initialData } from "@/lib/demo-data";
+import { defaultSections } from "@/lib/default-theme";
 import { ImageUploader } from "@/components/image-uploader";
 import { createClient } from "@/lib/supabase/client";
 import { sectionToRow } from "@/lib/supabase/mappers";
@@ -82,7 +82,7 @@ export default function WebsiteEditorPage() {
     })();
   };
   const resetSection = () => {
-    const original = initialData.sections.find(section => section.id === activeId);
+    const original = defaultSections.find(section => section.id === activeId);
     if (original) updateSection(original);
     notify(`${active.label} content reset`);
   };
