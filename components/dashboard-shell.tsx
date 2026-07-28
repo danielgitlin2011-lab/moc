@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   ExternalLink,
@@ -9,6 +9,7 @@ import {
   Globe2,
   Images,
   LayoutDashboard,
+  LogOut,
   Menu,
   MenuSquare,
   Paintbrush,
@@ -20,6 +21,7 @@ import { useState } from "react";
 import { BrandMark } from "./ui";
 import { businessInitials, cn } from "@/lib/utils";
 import { useApp } from "./app-provider";
+import { createClient } from "@/lib/supabase/client";
 
 const navigation = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -34,9 +36,16 @@ const navigation = [
 
 export function DashboardShell({ children, title, description, actions }: { children: React.ReactNode; title: string; description?: string; actions?: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { state } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const newLeads = state.leads.filter(lead => lead.status === "New").length;
+
+  const handleLogout = async () => {
+    await createClient().auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   const sidebar = (
     <>
@@ -53,7 +62,7 @@ export function DashboardShell({ children, title, description, actions }: { chil
         <strong>{state.business.name}</strong>
         <Link href={`/site/${state.business.slug}`}>View website <ExternalLink size={14} /></Link>
       </div>
-      <div className="sidebar-account"><div>{businessInitials(state.business.name)}</div><span><strong>Account owner</strong><small>{state.subscription.plan} plan · {state.subscription.status}</small></span></div>
+      <div className="sidebar-account"><div>{businessInitials(state.business.name)}</div><span><strong>Account owner</strong><small>{state.subscription.plan} plan · {state.subscription.status}</small></span><button className="icon-button" style={{ marginLeft: "auto" }} onClick={handleLogout} aria-label="Log out" title="Log out"><LogOut size={16} /></button></div>
     </>
   );
 

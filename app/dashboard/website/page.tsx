@@ -10,6 +10,10 @@ import { Button, Field } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { initialData } from "@/lib/demo-data";
 import { ImageUploader } from "@/components/image-uploader";
+import { createClient } from "@/lib/supabase/client";
+import { sectionToRow } from "@/lib/supabase/mappers";
+import type { Json } from "@/lib/supabase/types";
+import type { BusinessTheme, WebsiteSection } from "@/lib/types";
 
 const collectionSections: Record<string, string> = {
   stats: "Manage your highlights",
@@ -21,20 +25,62 @@ const collectionSections: Record<string, string> = {
 };
 
 export default function WebsiteEditorPage() {
-  const { state, setState, notify } = useApp();
+  const { state, setState, businessId, notify } = useApp();
   const [activeId, setActiveId] = useState("hero");
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const active = state.sections.find(section => section.id === activeId)!;
 
-  const updateSection = (patch: Partial<typeof active>) => setState(current => ({ ...current, sections: current.sections.map(section => section.id === activeId ? { ...section, ...patch } : section) }));
-  const move = (direction: -1 | 1) => setState(current => {
-    const index = current.sections.findIndex(section => section.id === activeId);
+  const persistSection = async (section: WebsiteSection, position: number) => {
+    try {
+      const row = sectionToRow(section, businessId, position);
+      const { error } = await createClient().from("website_sections").update(row).eq("business_id", businessId).eq("section_key", section.id);
+      if (error) throw error;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+
+  const persistTheme = async (nextTheme: BusinessTheme) => {
+    try {
+      const { error } = await createClient().from("businesses").update({ theme: nextTheme as unknown as Json }).eq("id", businessId);
+      if (error) throw error;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+
+  const updateTheme = (patch: Partial<BusinessTheme>) => {
+    const next = { ...state.theme, ...patch };
+    setState(current => ({ ...current, theme: next }));
+    void persistTheme(next);
+  };
+
+  const updateSection = (patch: Partial<WebsiteSection>) => {
+    const next = { ...active, ...patch };
+    const position = state.sections.findIndex(section => section.id === activeId);
+    setState(current => ({ ...current, sections: current.sections.map(section => section.id === activeId ? next : section) }));
+    void persistSection(next, position);
+  };
+  const move = (direction: -1 | 1) => {
+    const index = state.sections.findIndex(section => section.id === activeId);
     const target = index + direction;
-    if (target < 0 || target >= current.sections.length) return current;
-    const sections = [...current.sections];
+    if (target < 0 || target >= state.sections.length) return;
+    const sections = [...state.sections];
     [sections[index], sections[target]] = [sections[target], sections[index]];
-    return { ...current, sections };
-  });
+    setState(current => ({ ...current, sections }));
+    void (async () => {
+      try {
+        const supabase = createClient();
+        const [{ error: errorA }, { error: errorB }] = await Promise.all([
+          supabase.from("website_sections").update({ position: index }).eq("business_id", businessId).eq("section_key", sections[index].id),
+          supabase.from("website_sections").update({ position: target }).eq("business_id", businessId).eq("section_key", sections[target].id),
+        ]);
+        if (errorA || errorB) throw errorA || errorB;
+      } catch (err) {
+        notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+      }
+    })();
+  };
   const resetSection = () => {
     const original = initialData.sections.find(section => section.id === activeId);
     if (original) updateSection(original);
@@ -56,8 +102,8 @@ export default function WebsiteEditorPage() {
             {active.ctaLabel !== undefined && <Field label="Primary button text"><input value={active.ctaLabel} onChange={e => updateSection({ ctaLabel: e.target.value })} /></Field>}
             {active.secondaryCtaLabel !== undefined && <Field label="Secondary button text"><input value={active.secondaryCtaLabel} onChange={e => updateSection({ secondaryCtaLabel: e.target.value })} /></Field>}
             {collectionSections[activeId] && <Link className="editor-jump-link" href="/dashboard/content"><ListPlus size={15} /><span><strong>{collectionSections[activeId]}</strong><small>The headline above is section copy. Edit the entries themselves in Content.</small></span><ArrowRight size={14} /></Link>}
-            {activeId === "hero" && <div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Hero image</strong><small>Upload a wide, high-resolution event image.</small></span></div><ImageUploader compact value={state.theme.heroImage} onChange={heroImage => setState(current => ({ ...current, theme: { ...current.theme, heroImage } }))} /></div>}
-            {activeId === "about" && <div className="editor-media-stack"><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Chef or team image</strong><small>The main portrait in your story section.</small></span></div><ImageUploader compact value={state.theme.aboutImage} onChange={aboutImage => setState(current => ({ ...current, theme: { ...current.theme, aboutImage } }))} /></div><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Supporting detail image</strong><small>Food, tablescape, or behind-the-scenes detail.</small></span></div><ImageUploader compact value={state.theme.detailImage} onChange={detailImage => setState(current => ({ ...current, theme: { ...current.theme, detailImage } }))} /></div></div>}
+            {activeId === "hero" && <div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Hero image</strong><small>Upload a wide, high-resolution event image.</small></span></div><ImageUploader compact value={state.theme.heroImage} onChange={heroImage => updateTheme({ heroImage })} /></div>}
+            {activeId === "about" && <div className="editor-media-stack"><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Chef or team image</strong><small>The main portrait in your story section.</small></span></div><ImageUploader compact value={state.theme.aboutImage} onChange={aboutImage => updateTheme({ aboutImage })} /></div><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Supporting detail image</strong><small>Food, tablescape, or behind-the-scenes detail.</small></span></div><ImageUploader compact value={state.theme.detailImage} onChange={detailImage => updateTheme({ detailImage })} /></div></div>}
             <div className="section-tools"><div><button onClick={() => move(-1)} disabled={state.sections[0].id === activeId} title="Move section up"><ChevronUp size={16} /> Move up</button><button onClick={() => move(1)} disabled={state.sections.at(-1)?.id === activeId} title="Move section down"><ChevronDown size={16} /> Move down</button></div><button onClick={resetSection}><RotateCcw size={15} /> Reset content</button></div>
           </div>
         </div>

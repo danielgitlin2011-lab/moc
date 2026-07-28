@@ -1,12 +1,14 @@
 "use client";
 
-import { Bell, Check, ChevronRight, CircleAlert, CreditCard, DatabaseBackup, Globe2, Plus, Save, Settings2, Share2, ShieldCheck, Trash2 } from "lucide-react";
+import { Bell, Check, ChevronRight, CircleAlert, CreditCard, Globe2, Plus, Save, Settings2, Share2, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { useApp } from "@/components/app-provider";
 import { Badge, Button, Field } from "@/components/ui";
 import { cn, uid } from "@/lib/utils";
-import type { Business, OpeningHour, SocialLinks } from "@/lib/types";
+import type { AppState, Business, OpeningHour, SocialLinks } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
+import { businessToRow } from "@/lib/supabase/mappers";
 
 type SettingsTab = "business" | "policies" | "presence" | "domain" | "notifications" | "subscription";
 
@@ -19,16 +21,46 @@ const socialNetworks: { key: keyof SocialLinks; label: string; placeholder: stri
 ];
 
 export default function SettingsPage() {
-  const { state, setState, reset, notify } = useApp();
+  const { state, setState, businessId, notify } = useApp();
   const [tab, setTab] = useState<SettingsTab>("business");
-  const [confirmReset, setConfirmReset] = useState(false);
 
-  const updateBusiness = <K extends keyof Business>(key: K, value: Business[K]) =>
-    setState(current => ({ ...current, business: { ...current.business, [key]: value } }));
-  const updateSocial = (key: keyof SocialLinks, value: string) =>
-    setState(current => ({ ...current, business: { ...current.business, social: { ...current.business.social, [key]: value } } }));
+  const persistBusiness = async (next: Business) => {
+    try {
+      const update: Partial<ReturnType<typeof businessToRow>> = businessToRow(next, state.theme, "", { onboarded: state.onboarded, published: next.published });
+      delete update.owner_id;
+      const { error } = await createClient().from("businesses").update(update).eq("id", businessId);
+      if (error) throw error;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+
+  const persistNotifications = async (next: AppState["notifications"]) => {
+    try {
+      const { error } = await createClient().from("businesses").update({ notifications: next }).eq("id", businessId);
+      if (error) throw error;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+
+  const updateBusiness = <K extends keyof Business>(key: K, value: Business[K]) => {
+    const next = { ...state.business, [key]: value };
+    setState(current => ({ ...current, business: next }));
+    void persistBusiness(next);
+  };
+  const updateSocial = (key: keyof SocialLinks, value: string) => {
+    const next = { ...state.business, social: { ...state.business.social, [key]: value } };
+    setState(current => ({ ...current, business: next }));
+    void persistBusiness(next);
+  };
   const updateHours = (id: string, patch: Partial<OpeningHour>) =>
     updateBusiness("openingHours", state.business.openingHours.map(hour => hour.id === id ? { ...hour, ...patch } : hour));
+  const updateNotifications = (patch: Partial<AppState["notifications"]>) => {
+    const next = { ...state.notifications, ...patch };
+    setState(current => ({ ...current, notifications: next }));
+    void persistNotifications(next);
+  };
   const list = (value: string) => value.split(",").map(entry => entry.trim()).filter(Boolean);
 
   return (
@@ -41,7 +73,6 @@ export default function SettingsPage() {
           <button className={cn(tab === "domain" && "active")} onClick={() => setTab("domain")}><Globe2 size={17} /><span><strong>Domain</strong><small>Website address and DNS</small></span><ChevronRight size={15} /></button>
           <button className={cn(tab === "notifications" && "active")} onClick={() => setTab("notifications")}><Bell size={17} /><span><strong>Notifications</strong><small>Lead and summary alerts</small></span><ChevronRight size={15} /></button>
           <button className={cn(tab === "subscription" && "active")} onClick={() => setTab("subscription")}><CreditCard size={17} /><span><strong>Subscription</strong><small>Plan and billing</small></span><ChevronRight size={15} /></button>
-          <div className="demo-reset-card"><DatabaseBackup size={18} /><div><strong>Demo data</strong><p>Restore all business, website, menu, gallery, and lead data to its original state.</p></div>{confirmReset ? <div className="reset-confirm"><span>Are you sure?</span><button onClick={() => setConfirmReset(false)}>Cancel</button><button onClick={() => { reset(); setConfirmReset(false); }}>Reset everything</button></div> : <button onClick={() => setConfirmReset(true)}>Reset demo data</button>}</div>
         </nav>
 
         <section className="settings-panel">
@@ -120,9 +151,9 @@ export default function SettingsPage() {
           {tab === "notifications" && <>
             <div className="settings-heading"><span>Stay informed</span><h2>Notifications</h2><p>Choose what ServeSite should send and where.</p></div>
             <div className="notification-list">
-              <NotificationToggle title="Email for new leads" body={`Send every quote request to ${state.business.email}.`} checked={state.notifications.emailLeads} onChange={value => setState(current => ({ ...current, notifications: { ...current.notifications, emailLeads: value } }))} />
-              <NotificationToggle title="WhatsApp notification" body="Receive a WhatsApp alert when a lead arrives. Coming soon." checked={state.notifications.whatsapp} onChange={value => setState(current => ({ ...current, notifications: { ...current.notifications, whatsapp: value } }))} comingSoon />
-              <NotificationToggle title="Weekly performance summary" body="A Monday recap of views, inquiries, and menu engagement." checked={state.notifications.weeklySummary} onChange={value => setState(current => ({ ...current, notifications: { ...current.notifications, weeklySummary: value } }))} />
+              <NotificationToggle title="Email for new leads" body={`Send every quote request to ${state.business.email}.`} checked={state.notifications.emailLeads} onChange={value => updateNotifications({ emailLeads: value })} />
+              <NotificationToggle title="WhatsApp notification" body="Receive a WhatsApp alert when a lead arrives. Coming soon." checked={state.notifications.whatsapp} onChange={value => updateNotifications({ whatsapp: value })} comingSoon />
+              <NotificationToggle title="Weekly performance summary" body="A Monday recap of views, inquiries, and menu engagement." checked={state.notifications.weeklySummary} onChange={value => updateNotifications({ weeklySummary: value })} />
             </div>
           </>}
 
