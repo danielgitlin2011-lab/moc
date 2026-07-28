@@ -136,7 +136,7 @@ export function QuoteRequestForm({ businessId, compact = false }: { businessId: 
       <Field label="Tell us about your event"><textarea {...register("details")} aria-invalid={!!errors.details} rows={4} placeholder="What are you planning, and what would make it feel special?" /><FormError message={errors.details?.message} /></Field>
       <fieldset className="contact-method"><legend>Preferred contact method</legend>{["Email", "Phone", "WhatsApp"].map(value => <label key={value}><input type="radio" value={value} {...register("preferredContact")} /> <span>{value}</span></label>)}</fieldset>
       <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="spin" size={18} /> : <Send size={17} />} {isSubmitting ? "Sending…" : "Send event request"}</Button>
-      <small className="form-privacy">By submitting, you agree to be contacted about this event. No spam, ever.</small>
+      <small className="form-privacy">By submitting, you agree to be contacted about this event. Your details are handled under our <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>. No spam, ever.</small>
     </form>
   );
 }

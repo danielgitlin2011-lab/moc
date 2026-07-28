@@ -8,8 +8,9 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       {
         userAgent: "*",
         allow: "/",
-        // Private workspaces and API surfaces have nothing to offer a crawler.
-        disallow: ["/dashboard", "/onboarding", "/preview", "/login", "/signup", "/api/"],
+        // Private workspaces, API surfaces, and the single-use reset link have
+        // nothing to offer a crawler.
+        disallow: ["/dashboard", "/onboarding", "/preview", "/login", "/signup", "/reset-password", "/api/"],
       },
     ],
     sitemap: `${origin}/sitemap.xml`,

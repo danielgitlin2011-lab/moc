@@ -121,7 +121,7 @@ export default function HomePage() {
 
       <section className="final-cta"><div className="container"><span className="eyebrow">Your next event could start here</span><h2>A better website. Better inquiries.<br />More memorable events.</h2><LinkButton href="/onboarding">Create your catering website <ArrowRight size={17} /></LinkButton></div></section>
 
-      <footer className="marketing-footer container"><BrandMark /><p>Websites and lead management, purpose-built for caterers.</p><div><Link href="/login">Log in</Link><a href="#pricing">Pricing</a><Link href="/site/olive-and-ember">Demo site</Link></div><small>© 2026 ServeSite. Demo product prototype.</small></footer>
+      <footer className="marketing-footer container"><BrandMark /><p>Websites and lead management, purpose-built for caterers.</p><div><Link href="/login">Log in</Link><a href="#pricing">Pricing</a><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div><small>© 2026 ServeSite. Demo product prototype.</small></footer>
     </main>
   );
 }

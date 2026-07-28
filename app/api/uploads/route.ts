@@ -1,7 +1,17 @@
-import { put } from "@vercel/blob";
+import { del, list, put } from "@vercel/blob";
 import { createClient } from "@/lib/supabase/server";
+import { ownsBlobUrl } from "@/lib/blob-ownership";
 
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
+/**
+ * Ceiling on stored images per account.
+ *
+ * Blob storage is billed by the byte and an authenticated caller could loop
+ * uploads all day. A caterer with a full gallery, a menu, services, and a team
+ * lands well under this; anything past it is not a catering website.
+ */
+const MAX_IMAGES_PER_USER = 300;
+
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const extensionByType: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -29,6 +39,17 @@ async function hasImageSignature(file: File, type: string) {
   }
 }
 
+/** Removes a previous rendition, ignoring anything that is not ours to remove. */
+async function deleteIfOwned(url: string | null, userId: string) {
+  if (!url || !ownsBlobUrl(url, userId)) return;
+  try {
+    await del(url);
+  } catch {
+    // A failed cleanup must never fail the upload that triggered it: the new
+    // image is already stored and the user is waiting on it.
+  }
+}
+
 export async function POST(request: Request) {
   // Uploads write to shared blob storage and cost money — signed-in owners only.
   const supabase = await createClient();
@@ -39,6 +60,7 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const file = formData.get("file");
+  const previousUrl = formData.get("previousUrl");
 
   if (!(file instanceof File)) {
     return Response.json({ error: "Choose an image to upload." }, { status: 400 });
@@ -53,13 +75,71 @@ export async function POST(request: Request) {
     return Response.json({ error: "That file isn't a valid image." }, { status: 415 });
   }
 
+  // Replacing an image does not count against the quota, because the one it
+  // replaces is removed below.
+  const replacing = typeof previousUrl === "string" && ownsBlobUrl(previousUrl, user.id);
+  if (!replacing) {
+    try {
+      // One extra so a full account is distinguishable from an exactly-full one.
+      const { blobs } = await list({ prefix: `${user.id}/`, limit: MAX_IMAGES_PER_USER + 1 });
+      if (blobs.length >= MAX_IMAGES_PER_USER) {
+        return Response.json(
+          { error: `You've reached the ${MAX_IMAGES_PER_USER}-image limit. Delete a few images and try again.` },
+          { status: 413 },
+        );
+      }
+    } catch {
+      // If the count cannot be read, allow the upload rather than blocking real
+      // work on a storage hiccup. The size and type checks above still apply.
+    }
+  }
+
   const extension = extensionByType[file.type];
   const key = `${user.id}/${crypto.randomUUID()}.${extension}`;
 
   try {
     const blob = await put(key, file, { access: "public", contentType: file.type });
+    // Only once the replacement is safely stored: the old URL is still what the
+    // page renders until this response comes back.
+    if (replacing) await deleteIfOwned(previousUrl as string, user.id);
     return Response.json({ url: blob.url });
   } catch {
     return Response.json({ error: "The image could not be stored. Please try again." }, { status: 502 });
   }
+}
+
+/**
+ * Removes an image the user cleared from a slot.
+ *
+ * Without this, "deleted" images stayed public at their original URL forever —
+ * a storage cost, and a privacy problem for anyone who removed a photograph
+ * because it should not have been published.
+ */
+export async function DELETE(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return Response.json({ error: "Please log in again." }, { status: 401 });
+  }
+
+  let url: unknown;
+  try {
+    ({ url } = (await request.json()) as { url?: unknown });
+  } catch {
+    return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  if (typeof url !== "string" || !ownsBlobUrl(url, user.id)) {
+    // The same answer whether the URL is malformed or belongs to someone else,
+    // so this cannot be used to probe what another account has stored.
+    return Response.json({ error: "That image can't be removed." }, { status: 400 });
+  }
+
+  try {
+    await del(url);
+  } catch {
+    return Response.json({ error: "The image could not be removed. Please try again." }, { status: 502 });
+  }
+
+  return new Response(null, { status: 204 });
 }

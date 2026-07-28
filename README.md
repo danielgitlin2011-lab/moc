@@ -69,9 +69,12 @@ Domain connection, notifications, subscriptions, and quote/deposit generation ar
 | `/preview` | Desktop/mobile preview with on-page editing |
 | `/site/[businessSlug]` | The generated catering website and quote form |
 | `/robots.txt`, `/sitemap.xml` | Crawler directives and every published site |
+| `/reset-password` | Where an emailed reset link lands; sets a new password |
+| `/privacy`, `/terms` | Privacy Policy and Terms of Service |
 | `/manifest.webmanifest` | Installable-app metadata, opening straight into `/dashboard` |
 | `/site/[businessSlug]/opengraph-image` | Social card composed from the customer's photo, name, and palette |
-| `/api/uploads` | Authenticated image upload (Vercel Blob) |
+| `/api/leads` | Validates and records an event request (the only write path for leads) |
+| `/api/uploads` | Authenticated image upload and delete (Vercel Blob) |
 | `/api/track` | Records one website view per visitor session |
 
 ## Architecture
@@ -165,7 +168,10 @@ Templates, palettes, fonts, and disclosure toggles are theme values rather than 
 - Keyboard support throughout: a skip link, visible focus rings, arrow-key menu tabs, and overlays that trap focus, close on Escape, restore focus, and lock background scrolling. `prefers-reduced-motion` disables smooth scrolling and reveal animations.
 - The pipeline board is reachable without a pointer: `⌘←` / `⌘→` performs the same move a drag does, and the board carries a described-by hint saying so.
 - Images load lazily, request a right-sized rendition from hosts that support it, and degrade to a placeholder instead of retrying a broken URL forever.
-- `/api/uploads` requires a signed-in session and verifies the file's magic bytes; uploads are namespaced per user. Security headers are set in `next.config.ts`. The quote form carries a honeypot and a submit-timing check.
+- `/api/uploads` requires a signed-in session and verifies the file's magic bytes; uploads are namespaced per user, capped at 300 images per account, and a replaced or cleared image is deleted from Blob storage rather than left public at its old URL. Because the URL to delete comes from the client, `ownsBlobUrl` re-checks the namespace server-side.
+- Security headers are set in `next.config.ts`: a Content-Security-Policy, HSTS with `preload`, COOP, CORP, and the sniffing/framing/referrer set that was already there.
+- Lead capture is server-side. The browser posts to `/api/leads`, which validates with the shared zod schema, checks the honeypot and submit timing where a bot cannot skip them, and applies a per-IP ceiling; `public.submit_lead` then re-checks the business and applies a per-business ceiling. The anon key can no longer write to `leads` directly.
+- Everything a customer types that ends up in an `href` or `src` — social profiles, map links, logos, hero and gallery images — is narrowed to an absolute http(s) URL by `safeHttpUrl`, on the way into the database and again on the way out.
 
 ## Security operations
 

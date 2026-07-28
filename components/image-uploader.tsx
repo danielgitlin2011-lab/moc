@@ -29,6 +29,9 @@ export function ImageUploader({
       const optimizedFile = await optimizeImage(file);
       const formData = new FormData();
       formData.append("file", optimizedFile);
+      // Tell the server what this replaces, so the old blob is removed rather
+      // than left public forever. The server re-checks that it is ours.
+      if (value) formData.append("previousUrl", value);
       const response = await fetch("/api/uploads", { method: "POST", body: formData });
       const result = await response.json() as { url?: string; error?: string };
       if (!response.ok || !result.url) throw new Error(result.error || "The image could not be uploaded.");
@@ -41,13 +44,29 @@ export function ImageUploader({
     }
   };
 
+  /**
+   * Clearing a slot also deletes the stored file. Leaving it behind meant a
+   * photograph someone removed on purpose stayed reachable at its URL.
+   */
+  const clear = (url: string) => {
+    onChange("");
+    void fetch("/api/uploads", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    }).catch(() => {
+      // The slot is already cleared in the UI; a failed cleanup leaves an
+      // orphan to sweep, not a broken page.
+    });
+  };
+
   return (
     <div className={cn("image-uploader", compact && "compact", value && "has-image")}>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => void upload(event.target.files?.[0])} />
       {value ? (
         <div className="upload-preview">
           <img src={value} alt="" />
-          <div><button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}>{uploading ? <LoaderCircle className="spin" size={16} /> : <ImagePlus size={16} />} Replace</button><button type="button" onClick={() => onChange("")} aria-label="Remove image"><X size={15} /></button></div>
+          <div><button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}>{uploading ? <LoaderCircle className="spin" size={16} /> : <ImagePlus size={16} />} Replace</button><button type="button" onClick={() => clear(value)} aria-label="Remove image"><X size={15} /></button></div>
         </div>
       ) : (
         <button
