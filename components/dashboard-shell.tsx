@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
+  Command,
   ExternalLink,
   FileText,
   Globe2,
@@ -21,6 +22,8 @@ import { useState } from "react";
 import { BrandMark } from "./ui";
 import { businessInitials, cn } from "@/lib/utils";
 import { useApp } from "./app-provider";
+import { ThemeToggle } from "./theme-toggle";
+import { WorkspaceShortcuts, openCommandPalette } from "./workspace-shortcuts";
 import { createClient } from "@/lib/supabase/client";
 
 const navigation = [
@@ -75,10 +78,20 @@ export function DashboardShell({ children, title, description, actions }: { chil
         <header className="dashboard-header">
           <button className="mobile-only icon-button" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu size={21} /></button>
           <div><h1>{title}</h1>{description && <p>{description}</p>}</div>
-          <div className="header-actions">{actions}<Link className="preview-link" href="/preview"><BarChart3 size={16} /> Preview</Link></div>
+          <div className="header-actions">
+            <button className="palette-trigger" onClick={openCommandPalette} aria-label="Search the workspace">
+              <Command size={15} />
+              <span>Search</span>
+              <kbd>⌘K</kbd>
+            </button>
+            <ThemeToggle />
+            {actions}
+            <Link className="preview-link" href="/preview"><BarChart3 size={16} /> Preview</Link>
+          </div>
         </header>
         <main className="dashboard-content" id="dashboard-content">{children}</main>
       </div>
+      <WorkspaceShortcuts />
     </div>
   );
 }

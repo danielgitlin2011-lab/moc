@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { requestOrigin } from "@/lib/seo";
+import { themeBootstrap } from "@/lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,9 +13,9 @@ const geistSans = Geist({
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fbfaf6" },
-    { media: "(prefers-color-scheme: dark)", color: "#233a31" },
+    { media: "(prefers-color-scheme: dark)", color: "#161713" },
   ],
-  colorScheme: "light",
+  colorScheme: "light dark",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,6 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
     applicationName: "ServeSite",
     keywords: ["catering website builder", "caterer website", "private chef website", "catering CRM", "event quote form"],
     alternates: { canonical: origin.toString() },
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, title: "ServeSite", statusBarStyle: "default" },
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: { title, description, type: "website", url: origin.toString(), siteName: "ServeSite", images: [{ url: socialImage, width: 1728, height: 909, alt: "ServeSite catering website builder" }] },
     twitter: { card: "summary_large_image", title, description, images: [socialImage] },
@@ -41,8 +44,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Paints the saved colour theme before first render so switching
+            between light and dark never flashes the wrong one. */}
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         {/* Customer photography is served from these hosts on nearly every page. */}
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />

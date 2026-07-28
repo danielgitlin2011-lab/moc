@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QuoteRequestForm } from "./quote-request-form";
+import { SiteChrome } from "./site-chrome";
 import { SiteImage } from "./site-image";
 import { useModalBehavior } from "./use-modal-behavior";
 import { cn, businessInitials, fontStack, yearsInBusiness } from "@/lib/utils";
@@ -498,6 +499,12 @@ export function PublicWebsite({
 
       {business.whatsapp && (
         <a className="whatsapp-float" href={`https://wa.me/${business.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" aria-label="Contact us on WhatsApp"><MessageCircle size={22} /><span>WhatsApp</span></a>
+      )}
+
+      {/* Scroll-linked chrome is measured against the window, so it only makes
+          sense on the real site — not inside the dashboard's preview frame. */}
+      {!preview && (
+        <SiteChrome phone={business.phone} whatsapp={business.whatsapp} quoteLabel={sectionMap.quote?.ctaLabel || "Request a quote"} />
       )}
 
       {activeImage && lightboxIndex !== null && (

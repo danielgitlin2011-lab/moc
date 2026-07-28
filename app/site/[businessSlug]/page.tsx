@@ -11,11 +11,12 @@ export async function generateMetadata({ params }: { params: Promise<{ businessS
   const bundle = await getPublicBusinessBySlug(businessSlug);
   if (!bundle) return { title: "Website not available", robots: { index: false, follow: false } };
 
-  const { business, theme } = bundle.state;
+  const { business } = bundle.state;
   const description = business.tagline || business.description;
-  const image = theme.heroImage;
   const canonical = `${await requestOrigin()}/site/${business.slug}`;
 
+  // `images` is deliberately absent: opengraph-image.tsx composes a branded
+  // card from this business's own photo and palette, and Next attaches it.
   return {
     title: { absolute: business.tagline ? `${business.name} — ${business.tagline}` : business.name },
     description,
@@ -27,14 +28,9 @@ export async function generateMetadata({ params }: { params: Promise<{ businessS
       type: "website",
       url: canonical,
       siteName: business.name,
-      ...(image ? { images: [{ url: image, alt: business.name }] } : {}),
+      locale: "en_US",
     },
-    twitter: {
-      card: image ? "summary_large_image" : "summary",
-      title: business.name,
-      description,
-      ...(image ? { images: [image] } : {}),
-    },
+    twitter: { card: "summary_large_image", title: business.name, description },
   };
 }
 

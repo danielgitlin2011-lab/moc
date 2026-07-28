@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { ArrowRight, CheckCircle2, Clock3, Eye, Globe2, MenuSquare, MessageSquareText, Paintbrush, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { TrafficChart, type Range } from "@/components/traffic-chart";
 import { Badge, LinkButton } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { formatDate, relativeTime } from "@/lib/utils";
@@ -10,11 +12,13 @@ import { leadSummary, leadTrend, profileCompletion, topMenuItems, viewSummary, v
 
 export default function DashboardPage() {
   const { state } = useApp();
+  const [range, setRange] = useState<Range>(30);
   const leads = leadSummary(state.leads);
   const views = viewSummary(state.visits, 30);
   const completion = profileCompletion(state);
   const topItem = topMenuItems(state, 1)[0];
-  const trend = views.hasData ? viewTrend(state.visits) : leadTrend(state.leads);
+  // Before a site has any traffic, inquiries are the only trend worth plotting.
+  const trend = views.hasData ? viewTrend(state.visits, range) : leadTrend(state.leads, range);
   const trendLabel = views.hasData ? "Website views" : "Inquiries received";
   const greeting = state.business.name ? `Welcome back, ${state.business.name}` : "Welcome back";
 
@@ -71,6 +75,21 @@ export default function DashboardPage() {
       </section>
 
       <div className="overview-grid">
+        <div className="overview-main">
+        <section className="panel activity-card">
+          <div className="panel-heading">
+            <div><h2>{trendLabel}</h2><p>{views.hasData ? "Measured from your published site." : "Requests sent through your quote form."}</p></div>
+            <TrendingUp size={18} />
+          </div>
+          <TrafficChart
+            points={trend}
+            range={range}
+            onRangeChange={setRange}
+            label={trendLabel}
+            unit={views.hasData ? "views" : "inquiries"}
+          />
+        </section>
+
         <section className="panel recent-leads-panel">
           <div className="panel-heading">
             <div><h2>Recent inquiries</h2><p>Your latest event requests.</p></div>
@@ -95,6 +114,7 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+        </div>
 
         <aside className="overview-side">
           <section className="panel completion-panel">
@@ -115,15 +135,6 @@ export default function DashboardPage() {
             </ul>
             {completion.remaining[0] && <Link href={completion.remaining[0].href}>Complete profile <ArrowRight size={15} /></Link>}
           </section>
-
-          <section className="panel activity-card">
-            <div className="panel-heading">
-              <div><h3>{trendLabel}</h3><p>Last 7 days</p></div>
-              <TrendingUp size={18} />
-            </div>
-            <MiniChart points={trend} />
-            <div className="chart-labels">{trend.map(point => <span key={point.date}>{point.label}</span>)}</div>
-          </section>
         </aside>
       </div>
 
@@ -136,17 +147,6 @@ export default function DashboardPage() {
         </div>
       </section>
     </DashboardShell>
-  );
-}
-
-function MiniChart({ points }: { points: { date: string; label: string; value: number }[] }) {
-  const peak = Math.max(...points.map(point => point.value), 1);
-  const empty = points.every(point => point.value === 0);
-  return (
-    <div className={`mini-chart ${empty ? "is-empty" : ""}`} role="img" aria-label={points.map(point => `${point.label}: ${point.value}`).join(", ")}>
-      {points.map(point => <i key={point.date} style={{ height: `${Math.max(3, (point.value / peak) * 100)}%` }} />)}
-      {empty && <small>Nothing recorded yet</small>}
-    </div>
   );
 }
 

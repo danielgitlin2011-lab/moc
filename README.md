@@ -62,6 +62,8 @@ Domain connection, notifications, subscriptions, and quote/deposit generation ar
 | `/preview` | Desktop/mobile preview with on-page editing |
 | `/site/[businessSlug]` | The generated catering website and quote form |
 | `/robots.txt`, `/sitemap.xml` | Crawler directives and every published site |
+| `/manifest.webmanifest` | Installable-app metadata, opening straight into `/dashboard` |
+| `/site/[businessSlug]/opengraph-image` | Social card composed from the customer's photo, name, and palette |
 | `/api/uploads` | Authenticated image upload (Vercel Blob) |
 | `/api/track` | Records one website view per visitor session |
 
@@ -78,8 +80,34 @@ Domain connection, notifications, subscriptions, and quote/deposit generation ar
 - `components/app-provider.tsx` — client state seeded from the server-fetched bundle; edits write straight back to Supabase.
 - `components/site-image.tsx` — every customer-supplied image, with a single-shot fallback and lazy loading.
 - `components/use-modal-behavior.ts` — Escape, focus trap, focus restore, and scroll lock for overlays.
+- `components/traffic-chart.tsx` — the overview's 7/30/90-day area chart, zero-based and hoverable.
+- `components/command-palette.tsx` + `lib/command-search.ts` — ⌘K search; the ranking is a pure, tested function.
+- `components/workspace-shortcuts.tsx` — global key handling and the shortcut reference.
+- `components/use-lead-status.ts` — the one path a lead's stage changes through, from the board or the drawer.
+- `components/site-chrome.tsx` — scroll-linked chrome for a published site.
+- `lib/theme.ts` — the colour-theme contract shared by the head bootstrap and the toggle.
 
-There is no local seed data and no `localStorage` persistence: server components fetch from Supabase, and each editor persists its own change immediately.
+There is no local seed data and no `localStorage` persistence: server components fetch from Supabase, and each editor persists its own change immediately. The single exception is the colour-theme choice, which is a device preference rather than account data.
+
+### The visual system
+
+`app/globals.css` opens with a token layer — neutral ramp, surfaces, brand, feedback, type scale, spacing, radii, elevation, and motion — and everything downstream is expressed in those tokens.
+
+- **11px floor.** Nothing in the product chrome is smaller than 11px. The miniature website previews inside the editor are the deliberate exception: they are scale models of a page, so their type stays proportionally tiny.
+- **Two brand tokens, not one.** `--green` is brand *ink* (links, active states, icons); `--brand-surface` is the solid brand *fill* behind white text. They diverge in dark mode, where ink lightens and the fill stays a deep plate.
+- **Dark mode** is stamped on `<html>` by an inline bootstrap in `app/layout.tsx` before first paint, so switching never flashes. `system` is resolved in that script rather than in CSS, which keeps the whole contract to a single `[data-theme="dark"]` block, and it keeps following the OS as the OS changes.
+- **Customer sites opt out.** `.public-site` pins every application token back to its light value: a published catering site is the customer's brand, and must render identically no matter which theme the operator happens to be using.
+
+### Working at the keyboard
+
+| Keys | Does |
+| --- | --- |
+| `⌘K` / `Ctrl+K` | Command palette over every page plus the account's own leads, dishes, and gallery images |
+| `?` | The full shortcut reference |
+| `G` then `O W C D M I L S P` | Jump to Overview, Website, Content, Design, Menu, Gallery, Leads, Settings, Preview |
+| `⌘←` / `⌘→` | Move the focused inquiry between pipeline stages on the Leads board |
+
+Leads also drag between Kanban columns with a pointer. Either way the move is optimistic, confirmed by an undoable toast, and rolled back if Supabase rejects it.
 
 ### Database
 
@@ -126,6 +154,15 @@ Templates, palettes, fonts, and disclosure toggles are theme values rather than 
 ## SEO, accessibility, and security
 
 - Each generated site emits a canonical URL, Open Graph and Twitter metadata, and a schema.org graph (`Caterer`/`LocalBusiness`, `Menu`, `FAQPage`) built from the customer's real content. `/sitemap.xml` lists every published site; `/robots.txt` keeps dashboards and APIs out of the index.
+- The social card for a published site is composed per business — hero photograph, name, tagline, service areas, and the customer's own palette — instead of handing a share dialog a raw stock photo. The photo is fetched with a deadline, so a slow host costs the card its background rather than the whole image.
 - Keyboard support throughout: a skip link, visible focus rings, arrow-key menu tabs, and overlays that trap focus, close on Escape, restore focus, and lock background scrolling. `prefers-reduced-motion` disables smooth scrolling and reveal animations.
+- The pipeline board is reachable without a pointer: `⌘←` / `⌘→` performs the same move a drag does, and the board carries a described-by hint saying so.
 - Images load lazily, request a right-sized rendition from hosts that support it, and degrade to a placeholder instead of retrying a broken URL forever.
 - `/api/uploads` requires a signed-in session and verifies the file's magic bytes; uploads are namespaced per user. Security headers are set in `next.config.ts`. The quote form carries a honeypot and a submit-timing check.
+
+## On a phone, and on paper
+
+- A published site keeps a fixed action bar at the bottom of the viewport on phones — call, WhatsApp, and request a quote — replacing the single floating bubble, because those are the things a visitor came to do. It respects `env(safe-area-inset-bottom)`.
+- Past the hero, the site header condenses into a solid pinned bar and a thin progress rule tracks how far through the page a reader is. Both are skipped inside the dashboard's preview frame, where window scroll is not the page's scroll.
+- Every dashboard route has a loading skeleton shaped like the page it stands in for, so navigation never shows a blank frame.
+- The print stylesheet turns the open lead into a one-page event brief and a published site into a clean printed page: chrome, toolbars, and overlays drop out, and link targets are spelled out after their text.
