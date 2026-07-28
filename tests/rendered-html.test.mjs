@@ -119,10 +119,25 @@ test("overlays and customer images behave for keyboard and offline users", async
 });
 
 test("the quote form defends against spam and impossible dates", async () => {
-  const form = await readFile(new URL("components/quote-request-form.tsx", root), "utf8");
+  const [form, schema, route] = await Promise.all([
+    readFile(new URL("components/quote-request-form.tsx", root), "utf8"),
+    readFile(new URL("lib/lead-schema.ts", root), "utf8"),
+    readFile(new URL("app/api/leads/route.ts", root), "utf8"),
+  ]);
+
   assert.match(form, /form-honeypot/);
-  assert.match(form, /Choose a date in the future/);
   assert.match(form, /source: attribution\.current\.source/, "leads record where they came from");
+
+  // The browser may no longer write to the table: everything goes through the
+  // route, so the spam checks cannot be skipped by not running the client.
+  assert.match(form, /fetch\("\/api\/leads"/, "submission goes through the API route");
+  assert.doesNotMatch(form, /from\("leads"\)\.insert/, "no direct anon insert may remain");
+
+  assert.match(schema, /Choose a date in the future/, "the date rule is shared by both sides");
+  assert.match(route, /leadSchema/, "the route validates with the same schema");
+  assert.match(route, /honeypot/);
+  assert.match(route, /elapsedMs/);
+  assert.match(route, /submit_lead/, "inserts run through the security-definer function");
 });
 
 test("no page reads or writes local/demo state — everything is backed by Supabase", async () => {

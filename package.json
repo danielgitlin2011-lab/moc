@@ -11,7 +11,7 @@
     "start": "next start",
     "test": "npm run build && node --experimental-strip-types --import ./tests/register.mjs --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern .next",
-    "test:unit": "node --experimental-strip-types --import ./tests/register.mjs --test tests/utils.test.mjs tests/analytics.test.mjs tests/structured-data.test.mjs tests/command-search.test.mjs tests/security.test.mjs",
+    "test:unit": "node --experimental-strip-types --import ./tests/register.mjs --test tests/utils.test.mjs tests/analytics.test.mjs tests/structured-data.test.mjs tests/command-search.test.mjs tests/security.test.mjs tests/rate-limit.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

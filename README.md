@@ -16,7 +16,14 @@ Create `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon or publishable key>
 BLOB_READ_WRITE_TOKEN=<vercel blob token>   # image uploads only
+NEXT_PUBLIC_SITE_ORIGIN=http://localhost:3000
 ```
+
+`NEXT_PUBLIC_SITE_ORIGIN` must be set in every deployed environment. Canonical
+URLs, the sitemap, Open Graph URLs, and password-reset links are built from it;
+without it the app falls back to the request's `Host` header, which the caller
+controls — the classic way to make a password-reset mail point at someone
+else's domain.
 
 ```bash
 npm install

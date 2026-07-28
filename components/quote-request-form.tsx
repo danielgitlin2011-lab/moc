@@ -4,35 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button, Field } from "./ui";
-import { createClient } from "@/lib/supabase/client";
+import { leadSchema, today, type LeadInput, type LeadValues } from "@/lib/lead-schema";
 
-const today = () => new Date().toISOString().slice(0, 10);
-
-const schema = z.object({
-  customerName: z.string().min(2, "Please enter your name"),
-  email: z.email("Enter a valid email address"),
-  phone: z.string().min(7, "Enter a valid phone number"),
-  eventDate: z.string().min(1, "Choose an event date").refine(value => value >= today(), "Choose a date in the future"),
-  eventTime: z.string().optional(),
-  eventLocation: z.string().min(2, "Enter an event location"),
-  eventType: z.string().min(1, "Choose an event type"),
-  guestCount: z.coerce.number().min(2, "Enter at least 2 guests").max(100_000, "That guest count looks too high"),
-  budget: z.string().min(1, "Choose an estimated budget"),
-  serviceStyle: z.string().optional(),
-  preferredMenu: z.string().optional(),
-  dietaryRequirements: z.string().optional(),
-  details: z.string().min(10, "Share a little more about your event"),
-  preferredContact: z.string().min(1),
-  hearAboutUs: z.string().optional(),
-});
+// The same schema the API route enforces, so the form can point at a bad field
+// before the request is made — and the server still decides.
+const schema = leadSchema;
 
 const serviceStyles = ["Plated dinner", "Family style", "Buffet", "Passed canapés", "Drop-off catering", "Not sure yet"];
 const referralSources = ["Instagram", "Google search", "Referral from a friend", "Worked with you before", "Wedding planner", "Other"];
 
-type QuoteFormData = z.infer<typeof schema>;
-type QuoteFormInput = z.input<typeof schema>;
+type QuoteFormData = LeadValues;
+type QuoteFormInput = LeadInput;
 
 /** Where the visitor came from, for the caterer's own reporting. */
 function captureSource() {
@@ -76,40 +59,36 @@ export function QuoteRequestForm({ businessId, compact = false }: { businessId: 
   const onSubmit = async (values: QuoteFormData, event?: React.BaseSyntheticEvent) => {
     setSubmitError("");
 
-    // Two quiet spam traps: a field only a bot fills in, and a submission that
-    // arrives faster than a person could possibly complete the form.
+    // The honeypot and the elapsed time are reported rather than acted on: the
+    // decision belongs to the server, where a bot cannot skip it by not
+    // running this code. The insert itself goes through /api/leads, because
+    // the anon key can no longer write to the table directly.
     const honeypot = (event?.target as HTMLFormElement | undefined)?.elements.namedItem("company") as HTMLInputElement | null;
-    if (honeypot?.value || Date.now() - openedAt.current < 2500) {
-      reset();
-      setSubmitted(true);
+
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessId,
+          honeypot: honeypot?.value ?? "",
+          elapsedMs: Date.now() - openedAt.current,
+          lead: { ...values, source: attribution.current.source, referrer: attribution.current.referrer },
+        }),
+      });
+
+      if (!response.ok) {
+        const message = response.status === 429
+          ? "We've received a lot of requests just now. Please try again in a few minutes."
+          : "Something went wrong sending your request. Please try again or contact us directly.";
+        setSubmitError(message);
+        return;
+      }
+    } catch {
+      setSubmitError("We couldn't reach the server. Please check your connection and try again.");
       return;
     }
 
-    const { error } = await createClient().from("leads").insert({
-      business_id: businessId,
-      customer_name: values.customerName,
-      email: values.email,
-      phone: values.phone,
-      event_date: values.eventDate,
-      event_time: values.eventTime || "Not specified",
-      event_location: values.eventLocation,
-      event_type: values.eventType,
-      guest_count: values.guestCount,
-      budget: values.budget,
-      service_style: values.serviceStyle || "Open to recommendations",
-      preferred_menu: values.preferredMenu || "Open to recommendations",
-      dietary_requirements: values.dietaryRequirements || "None shared",
-      details: values.details,
-      preferred_contact: values.preferredContact,
-      hear_about_us: values.hearAboutUs || "Not shared",
-      source: attribution.current.source,
-      referrer: attribution.current.referrer,
-    });
-
-    if (error) {
-      setSubmitError("Something went wrong sending your request. Please try again or contact us directly.");
-      return;
-    }
     reset();
     setSubmitted(true);
   };

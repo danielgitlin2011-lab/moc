@@ -705,6 +705,29 @@ export type Database = {
     }
     Functions: {
       record_site_visit: { Args: { p_business_id: string }; Returns: undefined }
+      submit_lead: {
+        Args: {
+          p_business_id: string
+          p_customer_name: string
+          p_email: string
+          p_phone: string
+          p_event_date: string
+          p_event_time: string
+          p_event_location: string
+          p_event_type: string
+          p_guest_count: number
+          p_budget: string
+          p_service_style: string
+          p_preferred_menu: string
+          p_dietary_requirements: string
+          p_details: string
+          p_preferred_contact: string
+          p_hear_about_us: string
+          p_source: string
+          p_referrer: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
