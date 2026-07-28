@@ -10,8 +10,8 @@ function absolute(origin: string, value: string) {
 }
 
 /**
- * Structured data for a generated catering website. Search engines use this to
- * show the caterer's rating, service area, and menu directly in results.
+ * Structured data for a generated website. Search engines use this to
+ * show the business's rating, service area, and menu directly in results.
  */
 export function businessJsonLd(state: AppState, siteUrl: string, origin: string) {
   const { business, theme, testimonials, menuItems, categories, gallery, services } = state;
@@ -23,7 +23,7 @@ export function businessJsonLd(state: AppState, siteUrl: string, origin: string)
 
   const graph: Record<string, unknown>[] = [
     {
-      "@type": ["Caterer", "LocalBusiness"],
+      "@type": ["FoodEstablishment", "LocalBusiness"],
       "@id": `${siteUrl}#business`,
       name: business.name,
       description: business.tagline || business.description || undefined,

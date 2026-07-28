@@ -97,7 +97,7 @@ export default function SettingsPage() {
             <div className="settings-form">
               <div className="form-grid">
                 <Field label="Business name"><input value={state.business.name} onChange={e => updateBusiness("name", e.target.value)} /></Field>
-                <Field label="Business type" hint="Shown as the hero label"><input value={state.business.type} onChange={e => updateBusiness("type", e.target.value)} placeholder="Kosher catering" /></Field>
+                <Field label="Business type" hint="Shown as the hero label"><input value={state.business.type} onChange={e => updateBusiness("type", e.target.value)} placeholder="Family-run restaurant" /></Field>
               </div>
               <Field label="Tagline" hint="A single memorable line"><input value={state.business.tagline} onChange={e => updateBusiness("tagline", e.target.value)} /></Field>
               <Field label="Short description" hint="Opens your About section"><textarea rows={4} value={state.business.description} onChange={e => updateBusiness("description", e.target.value)} /></Field>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
               <Field label="Map link" hint="Adds an “Open in maps” link to your contact section"><input value={state.business.mapUrl} onChange={e => updateBusiness("mapUrl", e.target.value)} placeholder="https://maps.google.com/?q=…" /></Field>
               <Field label="Service areas" hint="Separate service areas with commas"><input value={state.business.serviceAreas.join(", ")} onChange={e => updateBusiness("serviceAreas", list(e.target.value))} /></Field>
               <div className="form-grid">
-                <Field label="Founded" hint="Drives the “years catering” badges"><input value={state.business.foundedYear} onChange={e => updateBusiness("foundedYear", e.target.value)} placeholder="2014" /></Field>
+                <Field label="Founded" hint="Drives the “years in business” badges"><input value={state.business.foundedYear} onChange={e => updateBusiness("foundedYear", e.target.value)} placeholder="2014" /></Field>
                 <Field label="Team size"><input value={state.business.teamSize} onChange={e => updateBusiness("teamSize", e.target.value)} placeholder="18 chefs and service staff" /></Field>
               </div>
               <Field label="Languages you host in" hint="Separate with commas"><input value={state.business.languages.join(", ")} onChange={e => updateBusiness("languages", list(e.target.value))} /></Field>
@@ -174,7 +174,7 @@ export default function SettingsPage() {
             </div>
             <div className="domain-current"><div><Globe2 size={20} /><span><small>Current demo subdomain</small><strong>{state.business.slug}.servesite.co</strong></span></div>{state.business.published ? <Badge tone="green"><Check size={13} /> Live</Badge> : <Badge>Not published</Badge>}</div>
             <div className="settings-form"><Field label="Website address" hint="Used in your dashboard links and demo subdomain"><input value={state.business.slug} onChange={e => updateBusiness("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"))} /></Field></div>
-            <div className="domain-connect"><h3>Connect a custom domain</h3><p>Enter a domain you already own. This prototype simulates the connection steps.</p><div><input placeholder="www.yourcateringbusiness.com" /><Button onClick={() => notify("Domain connection simulated")}>Connect domain</Button></div></div>
+            <div className="domain-connect"><h3>Connect a custom domain</h3><p>Enter a domain you already own. This prototype simulates the connection steps.</p><div><input placeholder="www.yourfoodbusiness.com" /><Button onClick={() => notify("Domain connection simulated")}>Connect domain</Button></div></div>
             <div className="dns-placeholder"><div><ShieldCheck size={21} /><span><strong>DNS instructions</strong><p>After starting a connection, you’ll receive CNAME and verification records to add at your domain provider.</p></span></div><Badge>Placeholder</Badge></div>
           </>}
 
@@ -191,7 +191,7 @@ export default function SettingsPage() {
             <div className="settings-heading"><span>Plan and billing</span><h2>Subscription</h2><p>Your demo account is currently exploring the {state.subscription.plan} plan.</p></div>
             <div className="current-plan"><div><span>Current plan</span><h3>{state.subscription.plan}</h3><p>Unlimited menu items, lead management, galleries, and advanced inquiries.</p></div><div><Badge tone="gold">{state.subscription.status}</Badge><strong>₪{state.subscription.price}<small>/month</small></strong></div></div>
             <div className="upgrade-list">
-              <article><div><h3>Starter</h3><p>Everything needed to launch a professional catering site.</p></div><strong>₪149<small>/month</small></strong><Button variant="secondary" onClick={() => notify("Plan changes are simulated in this prototype")}>Choose Starter</Button></article>
+              <article><div><h3>Starter</h3><p>Everything needed to launch a professional food business site.</p></div><strong>₪149<small>/month</small></strong><Button variant="secondary" onClick={() => notify("Plan changes are simulated in this prototype")}>Choose Starter</Button></article>
               <article className="selected"><div><h3>Business</h3><p>Lead management, unlimited menus, galleries, and more.</p></div><strong>₪249<small>/month</small></strong><Badge tone="green">Current plan</Badge></article>
               <article><div><h3>Pro</h3><p>Deposits, automated quotes, and team members. Coming soon.</p></div><strong>₪449<small>/month</small></strong><Button variant="secondary" onClick={() => notify("Pro features are coming soon")}>Join waitlist</Button></article>
             </div>

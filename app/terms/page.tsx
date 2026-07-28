@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "The terms under which ServeSite accounts and generated catering websites are provided.",
+  description: "The terms under which ServeSite accounts and generated websites are provided.",
 };
 
 const UPDATED = "28 July 2026";
@@ -24,7 +24,7 @@ export default function TermsPage() {
         <section>
           <h2>The service</h2>
           <p>
-            ServeSite lets a catering business publish a website, manage its menu and gallery, and receive event
+            ServeSite lets a food business publish a website, manage its menu and gallery, and receive event
             requests. Some capabilities are still in development and are labelled &ldquo;coming soon&rdquo; in the
             interface; they are not part of what is being provided today.
           </p>

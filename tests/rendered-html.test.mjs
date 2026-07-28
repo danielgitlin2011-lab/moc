@@ -29,7 +29,7 @@ test("the production bundle and complete customer journey are present", async ()
     readFile(new URL("components/public-website.tsx", root), "utf8"),
     readFile(new URL("app/preview/page.tsx", root), "utf8"),
   ]);
-  assert.match(landing, /Your catering website, menu, and leads/);
+  assert.match(landing, /Your food business website, menu, and leads/);
   assert.match(publicSite, /gallery-lightbox/);
   assert.match(preview, /Edit on page/);
 });

@@ -1,6 +1,6 @@
 # ServeSite
 
-ServeSite is a Supabase-backed SaaS for catering companies and private chefs. It combines a controlled website builder, menu manager, gallery, detailed quote-request form, and a lightweight lead CRM — every customer signs up, sets up their own business, and publishes a generated website at `/site/<slug>`.
+ServeSite is a Supabase-backed SaaS for food businesses — caterers, private chefs, restaurants, and more. It combines a controlled website builder, menu manager, gallery, detailed quote-request form, and a lightweight lead CRM — every customer signs up, sets up their own business, and publishes a generated website at `/site/<slug>`.
 
 ## Run locally
 
@@ -67,7 +67,7 @@ Domain connection, notifications, subscriptions, and quote/deposit generation ar
 | `/dashboard/leads` | Table/Kanban CRM with lead details and notes |
 | `/dashboard/settings` | Business profile, policies, publishing, domain, notifications, and plan |
 | `/preview` | Desktop/mobile preview with on-page editing |
-| `/site/[businessSlug]` | The generated catering website and quote form |
+| `/site/[businessSlug]` | The generated business website and quote form |
 | `/robots.txt`, `/sitemap.xml` | Crawler directives and every published site |
 | `/reset-password` | Where an emailed reset link lands; sets a new password |
 | `/privacy`, `/terms` | Privacy Policy and Terms of Service |
@@ -106,7 +106,7 @@ There is no local seed data and no `localStorage` persistence: server components
 - **11px floor.** Nothing in the product chrome is smaller than 11px. The miniature website previews inside the editor are the deliberate exception: they are scale models of a page, so their type stays proportionally tiny.
 - **Two brand tokens, not one.** `--green` is brand *ink* (links, active states, icons); `--brand-surface` is the solid brand *fill* behind white text. They diverge in dark mode, where ink lightens and the fill stays a deep plate.
 - **Dark mode** is stamped on `<html>` by an inline bootstrap in `app/layout.tsx` before first paint, so switching never flashes. `system` is resolved in that script rather than in CSS, which keeps the whole contract to a single `[data-theme="dark"]` block, and it keeps following the OS as the OS changes.
-- **Customer sites opt out.** `.public-site` pins every application token back to its light value: a published catering site is the customer's brand, and must render identically no matter which theme the operator happens to be using.
+- **Customer sites opt out.** `.public-site` pins every application token back to its light value: a published site is the customer's brand, and must render identically no matter which theme the operator happens to be using.
 
 ### Working at the keyboard
 
@@ -163,7 +163,7 @@ Templates, palettes, fonts, and disclosure toggles are theme values rather than 
 
 ## SEO, accessibility, and security
 
-- Each generated site emits a canonical URL, Open Graph and Twitter metadata, and a schema.org graph (`Caterer`/`LocalBusiness`, `Menu`, `FAQPage`) built from the customer's real content. `/sitemap.xml` lists every published site; `/robots.txt` keeps dashboards and APIs out of the index.
+- Each generated site emits a canonical URL, Open Graph and Twitter metadata, and a schema.org graph (`FoodEstablishment`/`LocalBusiness`, `Menu`, `FAQPage`) built from the customer's real content. `/sitemap.xml` lists every published site; `/robots.txt` keeps dashboards and APIs out of the index.
 - The social card for a published site is composed per business — hero photograph, name, tagline, service areas, and the customer's own palette — instead of handing a share dialog a raw stock photo. The photo is fetched with a deadline, so a slow host costs the card its background rather than the whole image.
 - Keyboard support throughout: a skip link, visible focus rings, arrow-key menu tabs, and overlays that trap focus, close on Escape, restore focus, and lock background scrolling. `prefers-reduced-motion` disables smooth scrolling and reveal animations.
 - The pipeline board is reachable without a pointer: `⌘←` / `⌘→` performs the same move a drag does, and the board carries a described-by hint saying so.
@@ -236,7 +236,7 @@ There is no self-service delete button yet. The documented procedure is:
 
 This matters beyond tidiness: the product stores end-client PII — names,
 phone numbers, email addresses, event locations — that those clients gave to a
-caterer, not to us. Building this as a self-service flow is tracked work, and
+business, not to us. Building this as a self-service flow is tracked work, and
 `/privacy` states the commitment in the meantime.
 
 ## On a phone, and on paper

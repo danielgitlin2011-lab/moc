@@ -11,7 +11,7 @@ import { leadSchema, today, type LeadInput, type LeadValues } from "@/lib/lead-s
 // before the request is made — and the server still decides.
 const schema = leadSchema;
 
-const serviceStyles = ["Plated dinner", "Family style", "Buffet", "Passed canapés", "Drop-off catering", "Not sure yet"];
+const serviceStyles = ["Plated dinner", "Family style", "Buffet", "Passed canapés", "Drop-off / delivery", "Not sure yet"];
 const referralSources = ["Instagram", "Google search", "Referral from a friend", "Worked with you before", "Wedding planner", "Other"];
 
 type QuoteFormData = LeadValues;

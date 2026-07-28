@@ -6,7 +6,7 @@ export default function BusinessNotFound() {
       <div className="empty-state" style={{ maxWidth: 480 }}>
         <BrandMark />
         <h3 style={{ marginTop: 18 }}>This website isn&apos;t available</h3>
-        <p>The catering website you&apos;re looking for doesn&apos;t exist, or its owner hasn&apos;t published it yet.</p>
+        <p>The website you&apos;re looking for doesn&apos;t exist, or its owner hasn&apos;t published it yet.</p>
         <LinkButton href="/">Go to ServeSite</LinkButton>
       </div>
     </main>

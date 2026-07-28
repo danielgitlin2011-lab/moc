@@ -1,15 +1,15 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Caterers live on their phones between events, so the dashboard is worth
+ * Food business owners live on their phones between events, so the dashboard is worth
  * installing. `start_url` points at the workspace rather than the marketing
  * page — an installed icon should open the tool, not the pitch.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ServeSite — catering websites and leads",
+    name: "ServeSite — food business websites and leads",
     short_name: "ServeSite",
-    description: "Publish a catering website, manage your menu, and turn event inquiries into booked business.",
+    description: "Publish a website for your food business, manage your menu, and turn inquiries into booked business.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

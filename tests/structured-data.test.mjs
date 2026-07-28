@@ -36,9 +36,9 @@ const state = {
 
 const graph = businessJsonLd(state, SITE, ORIGIN)["@graph"];
 
-test("the business node describes a caterer search engines can place", () => {
+test("the business node describes a food business search engines can place", () => {
   const business = graph.find(node => node["@id"] === `${SITE}#business`);
-  assert.deepEqual(business["@type"], ["Caterer", "LocalBusiness"]);
+  assert.deepEqual(business["@type"], ["FoodEstablishment", "LocalBusiness"]);
   assert.equal(business.name, "Olive & Ember");
   assert.equal(business.telephone, "+1 305 555 0123");
   assert.equal(business.address.addressLocality, "Miami Beach");

@@ -59,7 +59,7 @@ export default function SignupPage() {
         <BrandMark />
         <div className="auth-form-wrap">
           <span className="eyebrow plain">Start your trial</span>
-          <h1>Build your catering website in minutes.</h1>
+          <h1>Build your food business website in minutes.</h1>
           <p>Create your account, then we&apos;ll walk you through setting up your business.</p>
           <form onSubmit={submit}>
             {error && <div className="form-alert" role="alert">{error}</div>}
@@ -73,8 +73,8 @@ export default function SignupPage() {
         <small>By continuing, you agree to our <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>.</small>
       </section>
       <section className="auth-visual">
-        <img src={sizedImage("https://images.unsplash.com/photo-1555244162-803834f70033", 1200)} alt="Elegant catering presentation" loading="lazy" decoding="async" />
-        <div className="auth-quote"><blockquote>“Our website finally feels like the experience we create for our clients.”</blockquote><span>Olivia Ember · Olive &amp; Ember Catering <i>Demo story</i></span></div>
+        <img src={sizedImage("https://images.unsplash.com/photo-1555244162-803834f70033", 1200)} alt="Elegant food presentation" loading="lazy" decoding="async" />
+        <div className="auth-quote"><blockquote>“Our website finally feels like the experience we create for our clients.”</blockquote><span>Olivia Ember · Olive &amp; Ember <i>Demo story</i></span></div>
         <div className="auth-floating"><CheckCircle2 size={20} /><span><strong>Your website is live</strong><small>olive-and-ember.servesite.co</small></span></div>
       </section>
     </main>

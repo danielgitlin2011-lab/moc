@@ -14,7 +14,7 @@ import { faqToRow, processStepToRow, serviceToRow, statToRow, teamMemberToRow, t
 type CollectionKey = "services" | "stats" | "processSteps" | "team" | "testimonials" | "faqs";
 
 const tabs: { key: CollectionKey; label: string; singular: string; icon: React.ElementType; blurb: string; sectionId: string }[] = [
-  { key: "services", singular: "service", label: "Services", icon: Utensils, blurb: "The kinds of events you cater, with pricing and capacity.", sectionId: "services" },
+  { key: "services", singular: "service", label: "Services", icon: Utensils, blurb: "The kinds of events you serve, with pricing and capacity.", sectionId: "services" },
   { key: "stats", singular: "highlight", label: "Highlights", icon: Sparkles, blurb: "The numbers that build trust at a glance.", sectionId: "stats" },
   { key: "processSteps", singular: "step", label: "How it works", icon: ListOrdered, blurb: "The planning journey from first call to event day.", sectionId: "process" },
   { key: "team", singular: "team member", label: "Team", icon: Users, blurb: "The chefs and hosts your clients will work with.", sectionId: "team" },
@@ -250,7 +250,7 @@ function renderFields(tab: CollectionKey, item: { id: string }, update: (id: str
       return (
         <div className="form-grid">
           <Field label="Number"><input value={stat.value} onChange={event => set({ value: event.target.value })} placeholder="640" /></Field>
-          <Field label="What it measures"><input value={stat.label} onChange={event => set({ label: event.target.value })} placeholder="Events catered since 2014" /></Field>
+          <Field label="What it measures"><input value={stat.label} onChange={event => set({ label: event.target.value })} placeholder="Events served since 2014" /></Field>
         </div>
       );
     }

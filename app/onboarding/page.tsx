@@ -152,7 +152,7 @@ export default function OnboardingPage() {
             {errors.length > 0 && <div className="form-alert">Please complete: {errors.join(", ")}.</div>}
             <div className="form-grid">
               <Field label="Business name"><input value={business.name} onChange={e => setBusiness({ ...business, name: e.target.value })} /></Field>
-              <Field label="Business type"><select value={business.type} onChange={e => setBusiness({ ...business, type: e.target.value })}>{["Catering company", "Private chef", "Event catering", "Kosher catering", "Corporate catering", "Meal delivery"].map(value => <option key={value}>{value}</option>)}</select></Field>
+              <Field label="Business type"><select value={business.type} onChange={e => setBusiness({ ...business, type: e.target.value })}>{["Food business", "Catering company", "Private chef", "Restaurant", "Bakery", "Food truck", "Meal delivery"].map(value => <option key={value}>{value}</option>)}</select></Field>
               <Field label="Email"><input type="email" value={business.email} onChange={e => setBusiness({ ...business, email: e.target.value })} /></Field>
               <Field label="Phone number"><input value={business.phone} onChange={e => setBusiness({ ...business, phone: e.target.value })} /></Field>
               <Field label="WhatsApp number"><input value={business.whatsapp} onChange={e => setBusiness({ ...business, whatsapp: e.target.value })} /></Field>
@@ -163,7 +163,7 @@ export default function OnboardingPage() {
             <Field label="Your story" hint="Optional now — you can expand it later in Settings"><textarea rows={4} value={business.story} onChange={e => setBusiness({ ...business, story: e.target.value })} /></Field>
             <div className="form-grid">
               <Field label="Service areas" hint="Separate areas with commas"><input value={business.serviceAreas} onChange={e => setBusiness({ ...business, serviceAreas: e.target.value })} /></Field>
-              <Field label="Founded" hint="Drives the “years catering” badge"><input value={business.foundedYear} onChange={e => setBusiness({ ...business, foundedYear: e.target.value })} /></Field>
+              <Field label="Founded" hint="Drives the “years in business” badge"><input value={business.foundedYear} onChange={e => setBusiness({ ...business, foundedYear: e.target.value })} /></Field>
             </div>
           </div>}
 

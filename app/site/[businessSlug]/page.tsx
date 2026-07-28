@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ businessS
     title: { absolute: business.tagline ? `${business.name} — ${business.tagline}` : business.name },
     description,
     alternates: { canonical },
-    keywords: [business.type, ...business.serviceAreas.map(area => `catering ${area}`)].filter(Boolean),
+    keywords: [business.type, ...business.serviceAreas.map(area => business.type ? `${business.type} ${area}` : area)].filter(Boolean),
     openGraph: {
       title: business.name,
       description,
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ businessS
   };
 }
 
-export default async function CateringSitePage({ params }: { params: Promise<{ businessSlug: string }> }) {
+export default async function PublicSitePage({ params }: { params: Promise<{ businessSlug: string }> }) {
   const { businessSlug } = await params;
   const bundle = await getPublicBusinessBySlug(businessSlug);
 

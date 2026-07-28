@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { getPublicBusinessBySlug } from "@/lib/supabase/get-public-business";
 import { sizedImage } from "@/lib/utils";
 
-export const alt = "Catering website preview";
+export const alt = "Website preview";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -42,7 +42,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ bus
   const primary = theme?.primary || "#233a31";
   const accent = theme?.accent || "#c79d59";
   const name = business?.name || "ServeSite";
-  const tagline = business?.tagline || business?.description || "Catering for gatherings worth remembering.";
+  const tagline = business?.tagline || business?.description || "Food for gatherings worth remembering.";
   const hero = await heroDataUrl(theme?.heroImage || "");
   const areas = (business?.serviceAreas ?? []).slice(0, 3).join(" · ");
 
@@ -65,7 +65,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ bus
         <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", padding: "72px 80px", maxWidth: 860 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, color: accent, fontSize: 24, letterSpacing: 4, textTransform: "uppercase" }}>
             <div style={{ width: 46, height: 2, background: accent }} />
-            {business?.type || "Catering"}
+            {business?.type || "Food business"}
           </div>
           <div style={{ marginTop: 26, fontSize: 82, lineHeight: 1.02, letterSpacing: -2 }}>{name}</div>
           <div style={{ marginTop: 24, fontSize: 32, lineHeight: 1.4, color: "#dce3df", fontFamily: "sans-serif" }}>

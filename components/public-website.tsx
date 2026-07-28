@@ -156,7 +156,7 @@ export function PublicWebsite({
         return (
           <section id="top" className={cn("public-hero", `hero-layout-${theme.heroLayout}`, `hero-height-${theme.heroHeight}`)}>
             <div className="hero-image-panel">
-              <SiteImage src={theme.heroImage} fallback={gallery[0]?.url} alt={`${business.name} catered event`} width={2000} priority />
+              <SiteImage src={theme.heroImage} fallback={gallery[0]?.url} alt={`${business.name} event`} width={2000} priority />
               <div className="public-hero-shade" />
             </div>
             <div className="public-hero-content reveal-on-scroll">
@@ -168,7 +168,7 @@ export function PublicWebsite({
                 <a className="public-text-link" href="#menus">{section.secondaryCtaLabel || "Explore our menus"}</a>
               </div>
               <ul className="hero-facts">
-                {years > 0 && <li><Clock size={13} /> {years} years catering</li>}
+                {years > 0 && <li><Clock size={13} /> {years} years in business</li>}
                 {business.minimumGuests && <li><Users size={13} /> {business.minimumGuests}</li>}
                 {business.serviceAreas.length > 0 && <li><MapPin size={13} /> {business.serviceAreas.slice(0, 2).join(" · ")}</li>}
               </ul>
@@ -458,7 +458,7 @@ export function PublicWebsite({
           {business.logo ? <SiteImage src={business.logo} alt={`${business.name} logo`} width={200} priority /> : <span>{initials}</span>}
           <strong>{business.name}</strong>
         </Link>
-        <nav id="site-navigation" className={cn(mobileNav && "open")} aria-label="Catering website navigation">
+        <nav id="site-navigation" className={cn(mobileNav && "open")} aria-label="Website navigation">
           {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={`#${id}`} onClick={() => setMobileNav(false)}>{sectionMap[id].label}</a>)}
           <a className="mobile-nav-phone" href={`tel:${business.phone}`}>{business.phone}</a>
         </nav>

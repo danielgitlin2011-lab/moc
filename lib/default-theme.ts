@@ -3,7 +3,7 @@ import type { Business, BusinessTheme, WebsiteSection } from "./types";
 export const defaultBusiness: Business = {
   name: "",
   slug: "",
-  type: "Catering company",
+  type: "Food business",
   tagline: "",
   description: "",
   story: "",
@@ -70,10 +70,10 @@ export const defaultTheme: BusinessTheme = {
 };
 
 export const defaultSections: WebsiteSection[] = [
-  { id: "hero", label: "Hero", eyebrow: "Welcome", title: "Gather beautifully. Dine memorably.", body: "Tell visitors what makes your catering unforgettable.", ctaLabel: "Plan your event", secondaryCtaLabel: "Explore our menus", visible: true },
-  { id: "stats", label: "Highlights", eyebrow: "By the numbers", title: "A track record worth sharing", body: "The experience behind every event you cater.", visible: true },
+  { id: "hero", label: "Hero", eyebrow: "Welcome", title: "Gather beautifully. Dine memorably.", body: "Tell visitors what makes your food unforgettable.", ctaLabel: "Plan your event", secondaryCtaLabel: "Explore our menus", visible: true },
+  { id: "stats", label: "Highlights", eyebrow: "By the numbers", title: "A track record worth sharing", body: "The experience behind everything you serve.", visible: true },
   { id: "about", label: "About", eyebrow: "Our story", title: "Hospitality, thoughtfully prepared", body: "Share the story and values behind your business.", ctaLabel: "Meet our team", visible: true },
-  { id: "services", label: "Services", eyebrow: "What we do", title: "Made for your kind of gathering", body: "Describe the events and services you cater to.", visible: true },
+  { id: "services", label: "Services", eyebrow: "What we do", title: "Made for your kind of gathering", body: "Describe the events and services you offer.", visible: true },
   { id: "process", label: "How it works", eyebrow: "Planning with us", title: "From first call to final course", body: "Walk guests through what happens after they reach out.", visible: true },
   { id: "menus", label: "Featured menus", eyebrow: "From the kitchen", title: "Menus your guests will remember", body: "Highlight a few signature dishes or packages.", ctaLabel: "View the full menu", visible: true },
   { id: "gallery", label: "Gallery", eyebrow: "Gatherings", title: "A table worth remembering", body: "Show off photos of past events and dishes.", ctaLabel: "Explore our work", visible: true },

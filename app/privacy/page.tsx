@@ -17,15 +17,15 @@ export default function PrivacyPage() {
         <span className="eyebrow plain">Privacy</span>
         <h1>Privacy Policy</h1>
         <p className="legal-lede">
-          ServeSite is a website builder and lead inbox for catering businesses. This page describes what we
+          ServeSite is a website builder and lead inbox for food businesses. This page describes what we
           collect, why, how long we keep it, and how to have it removed. Last updated {UPDATED}.
         </p>
 
         <section>
           <h2>Two kinds of people, two kinds of data</h2>
           <p>
-            <strong>Caterers</strong> hold an account with us. <strong>Their clients</strong> never sign up — they
-            visit a catering site and may send an event request. Those are different relationships, and we treat
+            <strong>Business owners</strong> hold an account with us. <strong>Their clients</strong> never sign up — they
+            visit a business&apos;s site and may send an event request. Those are different relationships, and we treat
             the data differently.
           </p>
         </section>
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           <h2>What we collect from account holders</h2>
           <ul>
             <li><strong>Account:</strong> email address and a hashed password, handled by our authentication provider. We never see or store the password itself.</li>
-            <li><strong>Business content:</strong> everything typed into the dashboard — business details, menus, photographs, service areas, policies, and site copy. This is published on the catering website the account creates.</li>
+            <li><strong>Business content:</strong> everything typed into the dashboard — business details, menus, photographs, service areas, policies, and site copy. This is published on the website the account creates.</li>
             <li><strong>Usage counters:</strong> a daily total of views for each published site. No visitor profiles, no cross-site tracking, no advertising identifiers.</li>
           </ul>
         </section>
@@ -42,13 +42,13 @@ export default function PrivacyPage() {
         <section>
           <h2>What we collect from site visitors</h2>
           <p>
-            When someone submits an event request, the form collects what the caterer needs to quote the job:
+            When someone submits an event request, the form collects what the business needs to quote the job:
             name, email, phone, event date, location, type, guest count, budget range, dietary requirements, and
             whatever notes they choose to add. We also record how the visitor arrived — a UTM tag or referring
-            page — so the caterer can see which channels work.
+            page — so the business can see which channels work.
           </p>
           <p>
-            This information belongs to the caterer. We process it on their behalf so they can respond. We do not
+            This information belongs to the business. We process it on their behalf so they can respond. We do not
             sell it, share it between accounts, or use it to market anything.
           </p>
         </section>
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
           <h2>How long it is kept</h2>
           <ul>
             <li><strong>Account and business content:</strong> for as long as the account is open.</li>
-            <li><strong>Event requests:</strong> kept until the caterer deletes them, or the account is closed.</li>
+            <li><strong>Event requests:</strong> kept until the business deletes them, or the account is closed.</li>
             <li><strong>View counters:</strong> a rolling record per site, aggregated by day. It contains no personal data.</li>
           </ul>
         </section>
@@ -92,7 +92,7 @@ export default function PrivacyPage() {
             against it, and the site stops being served. Backups age out on their own schedule within 30 days.
           </p>
           <p>
-            If you sent an event request to a caterer and want it removed, contact that caterer — the data is
+            If you sent an event request to a business and want it removed, contact that business — the data is
             theirs. If they cannot help, write to us and we will pass it on.
           </p>
         </section>
