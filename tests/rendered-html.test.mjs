@@ -71,11 +71,58 @@ test("theme switches customers can toggle actually change the rendered site", as
   }
 });
 
-test("image uploads are validated and stored via Vercel Blob", async () => {
+test("image uploads are authenticated, validated, and stored via Vercel Blob", async () => {
   const uploadRoute = await readFile(new URL("app/api/uploads/route.ts", root), "utf8");
   assert.match(uploadRoute, /allowedTypes/);
   assert.match(uploadRoute, /@vercel\/blob/);
   assert.match(uploadRoute, /put\(/);
+  // Blob storage costs money — anonymous callers must never reach it.
+  assert.match(uploadRoute, /auth\.getUser\(\)/);
+  assert.match(uploadRoute, /status: 401/);
+  assert.match(uploadRoute, /hasImageSignature/);
+});
+
+test("the dashboard reports measured data instead of invented numbers", async () => {
+  const overview = await readFile(new URL("app/dashboard/page.tsx", root), "utf8");
+  for (const invented of ["1,284", "+18%", "84%", "9:42", "31%"]) {
+    assert.doesNotMatch(overview, new RegExp(invented.replace(/[+.]/g, "\\$&")), `the overview must not hardcode "${invented}"`);
+  }
+  assert.match(overview, /leadSummary|viewSummary|profileCompletion/, "metrics come from the analytics module");
+  assert.match(overview, /state\.business\.published/, "the live/offline banner follows the real publish flag");
+});
+
+test("generated sites are discoverable: robots, sitemap, canonical, structured data", async () => {
+  const [robots, sitemap, sitePage] = await Promise.all([
+    readFile(new URL("app/robots.ts", root), "utf8"),
+    readFile(new URL("app/sitemap.ts", root), "utf8"),
+    readFile(new URL("app/site/[businessSlug]/page.tsx", root), "utf8"),
+  ]);
+  assert.match(robots, /\/dashboard/, "private routes stay out of the index");
+  assert.match(sitemap, /published/, "only published sites are listed");
+  assert.match(sitePage, /application\/ld\+json/);
+  assert.match(sitePage, /alternates: \{ canonical/);
+});
+
+test("overlays and customer images behave for keyboard and offline users", async () => {
+  const [publicSite, siteImage, modal] = await Promise.all([
+    readFile(new URL("components/public-website.tsx", root), "utf8"),
+    readFile(new URL("components/site-image.tsx", root), "utf8"),
+    readFile(new URL("components/use-modal-behavior.ts", root), "utf8"),
+  ]);
+  assert.match(modal, /Escape/);
+  assert.match(modal, /overflow = "hidden"/, "the page behind a dialog must not scroll");
+  assert.match(publicSite, /useModalBehavior/);
+  assert.match(publicSite, /skip-link/);
+  // Reassigning `src` in onError loops forever when the fallback is broken too.
+  assert.doesNotMatch(publicSite, /currentTarget\.src =/);
+  assert.match(siteImage, /"broken"/);
+});
+
+test("the quote form defends against spam and impossible dates", async () => {
+  const form = await readFile(new URL("components/quote-request-form.tsx", root), "utf8");
+  assert.match(form, /form-honeypot/);
+  assert.match(form, /Choose a date in the future/);
+  assert.match(form, /source: attribution\.current\.source/, "leads record where they came from");
 });
 
 test("no page reads or writes local/demo state — everything is backed by Supabase", async () => {

@@ -25,8 +25,10 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QuoteRequestForm } from "./quote-request-form";
+import { SiteImage } from "./site-image";
+import { useModalBehavior } from "./use-modal-behavior";
 import { cn, businessInitials, fontStack, yearsInBusiness } from "@/lib/utils";
 import type { AppState, GalleryImage, WebsiteSection } from "@/lib/types";
 
@@ -105,6 +107,37 @@ export function PublicWebsite({
   const openLightbox = (index: number) => setLightboxIndex(index);
   const activeImage: GalleryImage | undefined = lightboxIndex === null ? undefined : shownGallery[lightboxIndex];
 
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+  const showNext = useCallback(() => setLightboxIndex(index => (index === null ? null : Math.min(shownGallery.length - 1, index + 1))), [shownGallery.length]);
+  const showPrevious = useCallback(() => setLightboxIndex(index => (index === null ? null : Math.max(0, index - 1))), []);
+  useModalBehavior({ open: activeImage !== undefined, onClose: closeLightbox, onNext: showNext, onPrevious: showPrevious, containerRef: lightboxRef });
+
+  // The mobile drawer must not leave the page scrolling behind it.
+  useEffect(() => {
+    if (!mobileNav) return;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileNav(false); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = overflow;
+    };
+  }, [mobileNav]);
+
+  /** Roving arrow-key navigation between the menu category tabs. */
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const index = tabs.indexOf(document.activeElement as HTMLButtonElement);
+    if (index === -1) return;
+    event.preventDefault();
+    const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    next.focus();
+    next.click();
+  };
+
   const editButton = (id: string, label: string) => editable ? (
     <button className="inline-edit-button" onClick={() => onSectionSelect?.(id)}><Pencil size={13} /> Edit {label}</button>
   ) : null;
@@ -115,7 +148,7 @@ export function PublicWebsite({
         return (
           <section id="top" className={cn("public-hero", `hero-layout-${theme.heroLayout}`, `hero-height-${theme.heroHeight}`)}>
             <div className="hero-image-panel">
-              <img src={theme.heroImage} alt={`${business.name} catered event`} onError={event => { event.currentTarget.src = gallery[0]?.url || ""; }} />
+              <SiteImage src={theme.heroImage} fallback={gallery[0]?.url} alt={`${business.name} catered event`} width={2000} priority />
               <div className="public-hero-shade" />
             </div>
             <div className="public-hero-content reveal-on-scroll">
@@ -161,8 +194,8 @@ export function PublicWebsite({
               <div className="signature">{business.name}</div>
             </div>
             <div className="about-images">
-              <img src={theme.aboutImage || gallery[1]?.url} alt={`The team behind ${business.name}`} />
-              <img src={theme.detailImage || gallery[0]?.url} alt="An event detail" />
+              <SiteImage src={theme.aboutImage || gallery[1]?.url} fallback={theme.heroImage} alt={`The team behind ${business.name}`} width={900} />
+              <SiteImage src={theme.detailImage || gallery[0]?.url} fallback={theme.heroImage} alt="An event detail" width={700} />
               {years > 0 && <span><strong>{years}+</strong><small>years around<br />beautiful tables</small></span>}
             </div>
             {editButton("about", "about")}
@@ -176,7 +209,7 @@ export function PublicWebsite({
               {services.map((service, index) => (
                 <article key={service.id}>
                   <div className="service-card-image">
-                    <img src={service.image || gallery[index % Math.max(gallery.length, 1)]?.url} alt={service.title} onError={event => { event.currentTarget.src = theme.heroImage; }} />
+                    <SiteImage src={service.image || gallery[index % Math.max(gallery.length, 1)]?.url} fallback={theme.heroImage} alt={service.title} width={800} />
                     <span>{String(index + 1).padStart(2, "0")}</span>
                   </div>
                   <div>
@@ -218,18 +251,18 @@ export function PublicWebsite({
         return (
           <section id="menus" className={cn("public-section public-menus", `menu-layout-${theme.menuLayout}`)}>
             <div className="public-section-heading"><span>{section.eyebrow}</span><h2>{section.title}</h2><p>{section.body}</p></div>
-            <div className="public-menu-tabs" role="tablist" aria-label="Menu categories">
-              <button role="tab" aria-selected={activeCategory === "all"} className={activeCategory === "all" ? "active" : ""} onClick={() => setActiveCategory("all")}>Featured</button>
+            <div className="public-menu-tabs" role="tablist" aria-label="Menu categories" onKeyDown={onTabKeyDown}>
+              <button role="tab" id="menu-tab-all" aria-controls="menu-panel" aria-selected={activeCategory === "all"} tabIndex={activeCategory === "all" ? 0 : -1} className={activeCategory === "all" ? "active" : ""} onClick={() => setActiveCategory("all")}>Featured</button>
               {categories.filter(category => availableItems.some(item => item.categoryId === category.id)).map(category => (
-                <button role="tab" aria-selected={activeCategory === category.id} className={activeCategory === category.id ? "active" : ""} onClick={() => setActiveCategory(category.id)} key={category.id}>{category.name}</button>
+                <button role="tab" id={`menu-tab-${category.id}`} aria-controls="menu-panel" aria-selected={activeCategory === category.id} tabIndex={activeCategory === category.id ? 0 : -1} className={activeCategory === category.id ? "active" : ""} onClick={() => setActiveCategory(category.id)} key={category.id}>{category.name}</button>
               ))}
             </div>
             {activeCategoryMeta?.description && <p className="menu-category-note">{activeCategoryMeta.description}</p>}
-            <div className="featured-menu-grid">
+            <div className="featured-menu-grid" id="menu-panel" role="tabpanel" aria-labelledby={`menu-tab-${activeCategory}`}>
               {shownItems.map((item, index) => (
                 <article className={index === 0 ? "featured-menu-hero" : ""} key={item.id}>
                   <div className="menu-image-wrap">
-                    <img src={item.image} alt={item.name} onError={event => { event.currentTarget.src = theme.heroImage; }} />
+                    <SiteImage src={item.image} fallback={theme.heroImage} alt={item.name} width={800} />
                     <span>{categories.find(category => category.id === item.categoryId)?.name}</span>
                     {item.featured && <b className="menu-featured-flag"><Star size={9} fill="currentColor" /> Signature</b>}
                   </div>
@@ -283,7 +316,7 @@ export function PublicWebsite({
             <div className="gallery-mosaic">
               {shownGallery.map((image, index) => (
                 <button key={image.id} className={`gallery-${index + 1}`} onClick={() => openLightbox(index)} aria-label={`Open ${image.caption}`}>
-                  <img src={image.url} alt={image.caption} />
+                  <SiteImage src={image.url} alt={image.caption} width={900} />
                   <span>{image.category}</span>
                   <strong>{image.caption}</strong>
                   {(image.guestCount || image.location) && <em>{[image.guestCount, image.location].filter(Boolean).join(" · ")}</em>}
@@ -300,7 +333,7 @@ export function PublicWebsite({
             <div className="team-grid reveal-on-scroll">
               {team.map(member => (
                 <article key={member.id}>
-                  <div className="team-portrait"><img src={member.image} alt={member.name} onError={event => { event.currentTarget.src = theme.aboutImage; }} /></div>
+                  <div className="team-portrait"><SiteImage src={member.image} fallback={theme.aboutImage} alt={member.name} width={500} /></div>
                   <h3>{member.name}</h3>
                   <span>{member.role}</span>
                   <p>{member.bio}</p>
@@ -408,20 +441,21 @@ export function PublicWebsite({
       className={cn("public-site", `template-${theme.template}`, `header-${theme.headerStyle}`, preview && "is-preview", editable && "is-editable")}
       style={style}
     >
+      <a className="skip-link" href="#quote">Skip to the inquiry form</a>
       {theme.showAnnouncement && theme.announcementText && (
         <div className="public-announcement"><span>{theme.announcementText}</span><a href="#quote">Check availability <ArrowRight size={12} /></a></div>
       )}
       <header className={cn("public-header", `nav-${theme.navigation}`, theme.showAnnouncement && "with-announcement")}>
         <Link href="#top" className="public-logo">
-          {business.logo ? <img src={business.logo} alt={`${business.name} logo`} /> : <span>{initials}</span>}
+          {business.logo ? <SiteImage src={business.logo} alt={`${business.name} logo`} width={200} priority /> : <span>{initials}</span>}
           <strong>{business.name}</strong>
         </Link>
-        <nav className={cn(mobileNav && "open")} aria-label="Catering website navigation">
+        <nav id="site-navigation" className={cn(mobileNav && "open")} aria-label="Catering website navigation">
           {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={`#${id}`} onClick={() => setMobileNav(false)}>{sectionMap[id].label}</a>)}
           <a className="mobile-nav-phone" href={`tel:${business.phone}`}>{business.phone}</a>
         </nav>
         <a className="public-cta desktop-public-cta" href="#quote">{sectionMap.quote?.ctaLabel || "Request a quote"}</a>
-        <button className="public-menu" onClick={() => setMobileNav(!mobileNav)} aria-label="Toggle navigation" aria-expanded={mobileNav}>{mobileNav ? <X /> : <Menu />}</button>
+        <button className="public-menu" onClick={() => setMobileNav(!mobileNav)} aria-label={mobileNav ? "Close navigation" : "Open navigation"} aria-expanded={mobileNav} aria-controls="site-navigation">{mobileNav ? <X /> : <Menu />}</button>
       </header>
 
       {sections.filter(section => section.visible && section.id !== "footer").map(section => <Fragment key={section.id}>{renderSection(section)}</Fragment>)}
@@ -429,7 +463,7 @@ export function PublicWebsite({
       {sectionMap.footer?.visible && (
         <footer className="public-footer">
           <div>
-            {business.logo ? <img className="public-footer-logo" src={business.logo} alt="" /> : <span className="public-footer-mark">{initials}</span>}
+            {business.logo ? <SiteImage className="public-footer-logo" src={business.logo} alt="" width={200} /> : <span className="public-footer-mark">{initials}</span>}
             <h2>{business.name}</h2>
             <p>{sectionMap.footer.body}</p>
             {theme.showSocialLinks && socialEntries.length > 0 && (
@@ -467,18 +501,19 @@ export function PublicWebsite({
       )}
 
       {activeImage && lightboxIndex !== null && (
-        <div className="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Gallery image viewer" onMouseDown={() => setLightboxIndex(null)}>
-          <button className="lightbox-close" onClick={() => setLightboxIndex(null)} aria-label="Close gallery"><X /></button>
-          <button className="lightbox-arrow prev" disabled={lightboxIndex === 0} onClick={event => { event.stopPropagation(); setLightboxIndex(index => Math.max(0, (index || 0) - 1)); }} aria-label="Previous image"><ChevronLeft /></button>
+        <div className="gallery-lightbox" ref={lightboxRef} role="dialog" aria-modal="true" aria-label="Gallery image viewer" onMouseDown={closeLightbox}>
+          <button className="lightbox-close" onClick={closeLightbox} aria-label="Close gallery"><X /></button>
+          <button className="lightbox-arrow prev" disabled={lightboxIndex === 0} onClick={event => { event.stopPropagation(); showPrevious(); }} aria-label="Previous image"><ChevronLeft /></button>
           <figure onMouseDown={event => event.stopPropagation()}>
-            <img src={activeImage.url} alt={activeImage.caption} />
+            <SiteImage src={activeImage.url} alt={activeImage.caption} width={1800} priority />
             <figcaption>
               <span>{activeImage.category}</span>
               <strong>{activeImage.caption}</strong>
               <em>{[activeImage.eventType, activeImage.guestCount, activeImage.location].filter(Boolean).join(" · ")}</em>
             </figcaption>
           </figure>
-          <button className="lightbox-arrow next" disabled={lightboxIndex === shownGallery.length - 1} onClick={event => { event.stopPropagation(); setLightboxIndex(index => Math.min(shownGallery.length - 1, (index || 0) + 1)); }} aria-label="Next image"><ChevronRight /></button>
+          <button className="lightbox-arrow next" disabled={lightboxIndex === shownGallery.length - 1} onClick={event => { event.stopPropagation(); showNext(); }} aria-label="Next image"><ChevronRight /></button>
+          <p className="lightbox-hint">{lightboxIndex + 1} of {shownGallery.length} · use ← → to browse</p>
         </div>
       )}
     </div>

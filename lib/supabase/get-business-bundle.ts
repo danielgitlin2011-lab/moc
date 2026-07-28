@@ -39,7 +39,10 @@ export async function getBusinessBundleForUser(): Promise<BusinessBundle | null>
 
   const businessId = business.id;
 
-  const [sections, services, testimonials, faqs, stats, processSteps, team, categories, menuItems, gallery, leads] = await Promise.all([
+  const visitWindowStart = new Date();
+  visitWindowStart.setDate(visitWindowStart.getDate() - 89);
+
+  const [sections, services, testimonials, faqs, stats, processSteps, team, categories, menuItems, gallery, leads, visits] = await Promise.all([
     supabase.from("website_sections").select("*").eq("business_id", businessId).order("position"),
     supabase.from("services").select("*").eq("business_id", businessId).order("position"),
     supabase.from("testimonials").select("*").eq("business_id", businessId).order("position"),
@@ -51,6 +54,12 @@ export async function getBusinessBundleForUser(): Promise<BusinessBundle | null>
     supabase.from("menu_items").select("*").eq("business_id", businessId).order("position"),
     supabase.from("gallery_images").select("*").eq("business_id", businessId).order("position"),
     supabase.from("leads").select("*, lead_notes(*)").eq("business_id", businessId).order("received_at", { ascending: false }),
+    supabase
+      .from("site_visit_days")
+      .select("visited_on, views")
+      .eq("business_id", businessId)
+      .gte("visited_on", visitWindowStart.toISOString().slice(0, 10))
+      .order("visited_on"),
   ]);
 
   const sectionRows = sections.data ?? [];
@@ -70,6 +79,8 @@ export async function getBusinessBundleForUser(): Promise<BusinessBundle | null>
     menuItems: (menuItems.data ?? []).map(menuItemRowToMenuItem),
     gallery: (gallery.data ?? []).map(galleryRowToImage),
     leads: (leads.data ?? []).map(row => leadRowToLead(row, row.lead_notes ?? [])),
+    visits: (visits.data ?? []).map(row => ({ date: row.visited_on, views: row.views })),
+    publishedAt: business.published_at,
     subscription: rowToSubscription(business),
     notifications: rowToNotifications(business),
     onboarded: business.onboarded,

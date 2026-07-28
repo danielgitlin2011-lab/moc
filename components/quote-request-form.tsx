@@ -2,21 +2,23 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button, Field } from "./ui";
 import { createClient } from "@/lib/supabase/client";
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 const schema = z.object({
   customerName: z.string().min(2, "Please enter your name"),
   email: z.email("Enter a valid email address"),
   phone: z.string().min(7, "Enter a valid phone number"),
-  eventDate: z.string().min(1, "Choose an event date"),
+  eventDate: z.string().min(1, "Choose an event date").refine(value => value >= today(), "Choose a date in the future"),
   eventTime: z.string().optional(),
   eventLocation: z.string().min(2, "Enter an event location"),
   eventType: z.string().min(1, "Choose an event type"),
-  guestCount: z.coerce.number().min(2, "Enter at least 2 guests"),
+  guestCount: z.coerce.number().min(2, "Enter at least 2 guests").max(100_000, "That guest count looks too high"),
   budget: z.string().min(1, "Choose an estimated budget"),
   serviceStyle: z.string().optional(),
   preferredMenu: z.string().optional(),
@@ -32,16 +34,57 @@ const referralSources = ["Instagram", "Google search", "Referral from a friend",
 type QuoteFormData = z.infer<typeof schema>;
 type QuoteFormInput = z.input<typeof schema>;
 
+/** Where the visitor came from, for the caterer's own reporting. */
+function captureSource() {
+  if (typeof window === "undefined") return { source: "", referrer: "" };
+  const params = new URLSearchParams(window.location.search);
+  const source = params.get("utm_source") || params.get("ref") || "";
+  const campaign = params.get("utm_campaign");
+  return {
+    source: [source, campaign].filter(Boolean).join(" · ").slice(0, 200),
+    referrer: (document.referrer || "").slice(0, 300),
+  };
+}
+
 export function QuoteRequestForm({ businessId, compact = false }: { businessId: string; compact?: boolean }) {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<QuoteFormInput, unknown, QuoteFormData>({
+  const openedAt = useRef(0);
+  const attribution = useRef({ source: "", referrer: "" });
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    openedAt.current = Date.now();
+    attribution.current = captureSource();
+  }, []);
+
+  const { register, handleSubmit, formState: { errors, isSubmitting, submitCount }, reset } = useForm<QuoteFormInput, unknown, QuoteFormData>({
     resolver: zodResolver(schema),
     defaultValues: { preferredContact: "Email" },
   });
 
-  const onSubmit = async (values: QuoteFormData) => {
+  const errorList = Object.entries(errors)
+    .map(([field, error]) => ({ field, message: (error as { message?: string })?.message }))
+    .filter((entry): entry is { field: string; message: string } => Boolean(entry.message));
+  const errorCount = errorList.length;
+
+  // Move the reader to the summary whenever a submit attempt fails validation.
+  useEffect(() => {
+    if (submitCount > 0 && errorCount > 0) errorSummaryRef.current?.focus();
+  }, [submitCount, errorCount]);
+
+  const onSubmit = async (values: QuoteFormData, event?: React.BaseSyntheticEvent) => {
     setSubmitError("");
+
+    // Two quiet spam traps: a field only a bot fills in, and a submission that
+    // arrives faster than a person could possibly complete the form.
+    const honeypot = (event?.target as HTMLFormElement | undefined)?.elements.namedItem("company") as HTMLInputElement | null;
+    if (honeypot?.value || Date.now() - openedAt.current < 2500) {
+      reset();
+      setSubmitted(true);
+      return;
+    }
+
     const { error } = await createClient().from("leads").insert({
       business_id: businessId,
       customer_name: values.customerName,
@@ -59,7 +102,10 @@ export function QuoteRequestForm({ businessId, compact = false }: { businessId: 
       details: values.details,
       preferred_contact: values.preferredContact,
       hear_about_us: values.hearAboutUs || "Not shared",
+      source: attribution.current.source,
+      referrer: attribution.current.referrer,
     });
+
     if (error) {
       setSubmitError("Something went wrong sending your request. Please try again or contact us directly.");
       return;
@@ -75,22 +121,32 @@ export function QuoteRequestForm({ businessId, compact = false }: { businessId: 
         <span>Request received</span>
         <h3>Thank you for thinking of us.</h3>
         <p>We’ve saved your event details and will be in touch within one business day.</p>
-        <Button type="button" variant="secondary" onClick={() => setSubmitted(false)}>Send another request</Button>
+        <Button type="button" variant="secondary" onClick={() => { openedAt.current = Date.now(); setSubmitted(false); }}>Send another request</Button>
       </div>
     );
   }
 
   return (
-    <form className={`quote-form ${compact ? "compact" : ""}`} onSubmit={handleSubmit(onSubmit)} noValidate>
-      {submitError && <div className="form-alert">{submitError}</div>}
+    <form className={`quote-form ${compact ? "compact" : ""}`} onSubmit={event => { void handleSubmit(onSubmit)(event); }} noValidate>
+      {submitError && <div className="form-alert" role="alert">{submitError}</div>}
+      {errorCount > 0 && submitCount > 0 && (
+        <div className="form-alert" role="alert" tabIndex={-1} ref={errorSummaryRef}>
+          Please check {errorCount} field{errorCount === 1 ? "" : "s"} before sending:
+          <ul>{errorList.map(entry => <li key={entry.field}>{entry.message}</li>)}</ul>
+        </div>
+      )}
+      <p className="form-honeypot" aria-hidden="true">
+        <label htmlFor="company">Company (leave this field empty)</label>
+        <input id="company" name="company" type="text" tabIndex={-1} autoComplete="off" />
+      </p>
       <div className="form-grid">
-        <Field label="Your name"><input {...register("customerName")} aria-invalid={!!errors.customerName} placeholder="Full name" /><FormError message={errors.customerName?.message} /></Field>
-        <Field label="Email"><input type="email" {...register("email")} aria-invalid={!!errors.email} placeholder="you@example.com" /><FormError message={errors.email?.message} /></Field>
-        <Field label="Phone"><input {...register("phone")} aria-invalid={!!errors.phone} placeholder="(305) 555-0123" /><FormError message={errors.phone?.message} /></Field>
-        <Field label="Event date"><input type="date" {...register("eventDate")} aria-invalid={!!errors.eventDate} /><FormError message={errors.eventDate?.message} /></Field>
+        <Field label="Your name"><input {...register("customerName")} aria-invalid={!!errors.customerName} autoComplete="name" placeholder="Full name" /><FormError message={errors.customerName?.message} /></Field>
+        <Field label="Email"><input type="email" {...register("email")} aria-invalid={!!errors.email} autoComplete="email" placeholder="you@example.com" /><FormError message={errors.email?.message} /></Field>
+        <Field label="Phone"><input type="tel" {...register("phone")} aria-invalid={!!errors.phone} autoComplete="tel" placeholder="(305) 555-0123" /><FormError message={errors.phone?.message} /></Field>
+        <Field label="Event date"><input type="date" min={today()} {...register("eventDate")} aria-invalid={!!errors.eventDate} /><FormError message={errors.eventDate?.message} /></Field>
         <Field label="Start time" hint="Optional"><input type="time" {...register("eventTime")} /></Field>
         <Field label="Event type"><select {...register("eventType")} aria-invalid={!!errors.eventType}><option value="">Select event</option>{["Wedding", "Birthday", "Corporate event", "Shabbat dinner", "Private dinner", "Holiday event", "Other"].map(value => <option key={value}>{value}</option>)}</select><FormError message={errors.eventType?.message} /></Field>
-        <Field label="Number of guests"><input type="number" {...register("guestCount")} aria-invalid={!!errors.guestCount} placeholder="50" /><FormError message={errors.guestCount?.message} /></Field>
+        <Field label="Number of guests"><input type="number" min={2} {...register("guestCount")} aria-invalid={!!errors.guestCount} placeholder="50" /><FormError message={errors.guestCount?.message} /></Field>
         <Field label="Event location"><input {...register("eventLocation")} aria-invalid={!!errors.eventLocation} placeholder="Venue or neighborhood" /><FormError message={errors.eventLocation?.message} /></Field>
         <Field label="Estimated budget"><select {...register("budget")} aria-invalid={!!errors.budget}><option value="">Select range</option>{["Under $2,500", "$2,500–$5,000", "$5,000–$10,000", "$10,000–$20,000", "$20,000+"].map(value => <option key={value}>{value}</option>)}</select><FormError message={errors.budget?.message} /></Field>
         <Field label="Service style"><select {...register("serviceStyle")}><option value="">Not sure yet</option>{serviceStyles.map(value => <option key={value}>{value}</option>)}</select></Field>
@@ -100,12 +156,12 @@ export function QuoteRequestForm({ businessId, compact = false }: { businessId: 
       </div>
       <Field label="Tell us about your event"><textarea {...register("details")} aria-invalid={!!errors.details} rows={4} placeholder="What are you planning, and what would make it feel special?" /><FormError message={errors.details?.message} /></Field>
       <fieldset className="contact-method"><legend>Preferred contact method</legend>{["Email", "Phone", "WhatsApp"].map(value => <label key={value}><input type="radio" value={value} {...register("preferredContact")} /> <span>{value}</span></label>)}</fieldset>
-      <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="spin" size={18} /> : <Send size={17} />} Send event request</Button>
+      <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="spin" size={18} /> : <Send size={17} />} {isSubmitting ? "Sending…" : "Send event request"}</Button>
       <small className="form-privacy">By submitting, you agree to be contacted about this event. No spam, ever.</small>
     </form>
   );
 }
 
 function FormError({ message }: { message?: string }) {
-  return message ? <em className="form-error">{message}</em> : null;
+  return message ? <em className="form-error" role="alert">{message}</em> : null;
 }

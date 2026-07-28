@@ -9,8 +9,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
-    "lint": "eslint . --ignore-pattern .next"
+    "test": "npm run build && node --experimental-strip-types --import ./tests/register.mjs --test tests/*.test.mjs",
+    "lint": "eslint . --ignore-pattern .next",
+    "test:unit": "node --experimental-strip-types --import ./tests/register.mjs --test tests/utils.test.mjs tests/analytics.test.mjs tests/structured-data.test.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",

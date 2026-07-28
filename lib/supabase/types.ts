@@ -37,6 +37,7 @@ export type Database = {
           owner_id: string
           phone: string
           published: boolean
+          published_at: string | null
           service_areas: string[]
           slug: string
           social: Json
@@ -74,6 +75,7 @@ export type Database = {
           owner_id: string
           phone?: string
           published?: boolean
+          published_at?: string | null
           service_areas?: string[]
           slug: string
           social?: Json
@@ -111,6 +113,7 @@ export type Database = {
           owner_id?: string
           phone?: string
           published?: boolean
+          published_at?: string | null
           service_areas?: string[]
           slug?: string
           social?: Json
@@ -253,7 +256,9 @@ export type Database = {
           preferred_contact: string
           preferred_menu: string
           received_at: string
+          referrer: string
           service_style: string
+          source: string
           status: string
         }
         Insert: {
@@ -274,7 +279,9 @@ export type Database = {
           preferred_contact?: string
           preferred_menu?: string
           received_at?: string
+          referrer?: string
           service_style?: string
+          source?: string
           status?: string
         }
         Update: {
@@ -295,7 +302,9 @@ export type Database = {
           preferred_contact?: string
           preferred_menu?: string
           received_at?: string
+          referrer?: string
           service_style?: string
+          source?: string
           status?: string
         }
         Relationships: [
@@ -503,6 +512,32 @@ export type Database = {
           },
         ]
       }
+      site_visit_days: {
+        Row: {
+          business_id: string
+          views: number
+          visited_on: string
+        }
+        Insert: {
+          business_id: string
+          views?: number
+          visited_on: string
+        }
+        Update: {
+          business_id?: string
+          views?: number
+          visited_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_visit_days_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stats: {
         Row: {
           business_id: string
@@ -669,7 +704,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_site_visit: { Args: { p_business_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

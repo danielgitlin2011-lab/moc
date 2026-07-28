@@ -54,7 +54,7 @@ export function DashboardShell({ children, title, description, actions }: { chil
         <span className="nav-label">Workspace</span>
         {navigation.map(({ href, label, icon: Icon }) => {
           const active = href === "/dashboard" ? pathname === href : pathname.startsWith(href);
-          return <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={cn(active && "active")}><Icon size={18} /><span>{label}</span>{label === "Leads" && newLeads > 0 && <b>{newLeads}</b>}</Link>;
+          return <Link key={href} href={href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={cn(active && "active")}><Icon size={18} /><span>{label}</span>{label === "Leads" && newLeads > 0 && <b aria-label={`${newLeads} new leads`}>{newLeads}</b>}</Link>;
         })}
       </nav>
       <div className="sidebar-site-card">
@@ -71,12 +71,13 @@ export function DashboardShell({ children, title, description, actions }: { chil
       <aside className={cn("dashboard-sidebar", mobileOpen && "open")}>{sidebar}</aside>
       {mobileOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
       <div className="dashboard-main">
+        <a className="skip-link" href="#dashboard-content">Skip to main content</a>
         <header className="dashboard-header">
           <button className="mobile-only icon-button" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu size={21} /></button>
           <div><h1>{title}</h1>{description && <p>{description}</p>}</div>
           <div className="header-actions">{actions}<Link className="preview-link" href="/preview"><BarChart3 size={16} /> Preview</Link></div>
         </header>
-        <div className="dashboard-content">{children}</div>
+        <main className="dashboard-content" id="dashboard-content">{children}</main>
       </div>
     </div>
   );

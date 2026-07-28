@@ -3,6 +3,7 @@
 import { Check, Monitor, Smartphone } from "lucide-react";
 import type { TemplateName } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { SiteImage } from "./site-image";
 
 const details: Record<TemplateName, { name: string; description: string; headline: string; image: string }> = {
   editorial: {
@@ -42,7 +43,7 @@ export function TemplateCard({ value, selected, onSelect, compact = false, monog
   return (
     <button type="button" className={cn("template-card", selected && "selected", compact && "compact")} onClick={onSelect} aria-pressed={selected}>
       <div className={`template-card-preview card-${value}`}>
-        <img src={item.image} alt="" />
+        <SiteImage src={item.image} alt="" width={400} />
         <span className="mini-logo">{monogram}</span>
         <b>{item.headline}</b>
         <span className="mini-button">Plan your event</span>

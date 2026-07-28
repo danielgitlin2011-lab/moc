@@ -305,6 +305,8 @@ export function leadRowToLead(row: Tables<"leads">, notes: Tables<"lead_notes">[
     details: row.details,
     preferredContact: row.preferred_contact,
     hearAboutUs: row.hear_about_us,
+    source: row.source,
+    referrer: row.referrer,
     receivedAt: row.received_at,
     status: row.status as LeadStatus,
     notes: notes.map(leadNoteRowToNote),

@@ -12,6 +12,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { BrandMark, LinkButton } from "@/components/ui";
+import { sizedImage } from "@/lib/utils";
 
 const features = [
   { icon: LayoutTemplate, title: "Niche-perfect websites", body: "Choose a polished catering template and customize the details—without ever breaking the design." },
@@ -31,6 +32,7 @@ const plans = [
 export default function HomePage() {
   return (
     <main className="marketing-page">
+      <a className="skip-link" href="#features">Skip to main content</a>
       <header className="marketing-nav container">
         <BrandMark />
         <nav aria-label="Main navigation">
@@ -59,7 +61,7 @@ export default function HomePage() {
           <div className="browser-frame">
             <div className="browser-bar"><span /><span /><span /><div>oliveandember.servesite.co</div></div>
             <div className="browser-content">
-              <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1800&q=85" alt="Elegant catered table" />
+              <img src={sizedImage("https://images.unsplash.com/photo-1555244162-803834f70033", 1600)} alt="Elegant catered table" width={1600} height={900} fetchPriority="high" decoding="sync" />
               <div className="browser-overlay"><small>OLIVE &amp; EMBER</small><h2>Gather beautifully.<br />Dine memorably.</h2><p>Elegant kosher catering for unforgettable gatherings in Miami.</p><span className="demo-button">Plan your event</span></div>
             </div>
           </div>
@@ -92,9 +94,9 @@ export default function HomePage() {
       <section id="templates" className="section container">
         <div className="section-heading split-heading"><div><span className="eyebrow plain">Catering-first templates</span><h2>Distinctive by design. Impossible to break.</h2></div><p>Controlled customization keeps every page polished across desktop and mobile—no nudging boxes or fixing broken layouts.</p></div>
         <div className="template-showcase">
-          <article className="template-preview editorial-preview"><div className="template-image"><img src="https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1000&q=80" alt="Editorial catering template" /><span>Gather<br />beautifully.</span></div><div><strong>Editorial</strong><small>Elegant serif · Premium events</small></div></article>
-          <article className="template-preview modern-preview"><div className="template-image"><div><b>GOOD FOOD.<br />GREAT PEOPLE.</b><img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1000&q=80" alt="Modern catering template" /></div></div><div><strong>Modern</strong><small>Bold grid · Clean sans-serif</small></div></article>
-          <article className="template-preview warm-preview"><div className="template-image"><img src="https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=1000&q=80" alt="Warm catering template" /><span>Food made<br />with heart.</span></div><div><strong>Warm</strong><small>Welcoming · Family-style</small></div></article>
+          <article className="template-preview editorial-preview"><div className="template-image"><img src={sizedImage("https://images.unsplash.com/photo-1515003197210-e0cd71810b5f", 800)} alt="Editorial catering template" width={800} height={1000} loading="lazy" decoding="async" /><span>Gather<br />beautifully.</span></div><div><strong>Editorial</strong><small>Elegant serif · Premium events</small></div></article>
+          <article className="template-preview modern-preview"><div className="template-image"><div><b>GOOD FOOD.<br />GREAT PEOPLE.</b><img src={sizedImage("https://images.unsplash.com/photo-1547592180-85f173990554", 800)} alt="Modern catering template" width={800} height={1000} loading="lazy" decoding="async" /></div></div><div><strong>Modern</strong><small>Bold grid · Clean sans-serif</small></div></article>
+          <article className="template-preview warm-preview"><div className="template-image"><img src={sizedImage("https://images.unsplash.com/photo-1533777857889-4be7c70b33f7", 800)} alt="Warm catering template" width={800} height={1000} loading="lazy" decoding="async" /><span>Food made<br />with heart.</span></div><div><strong>Warm</strong><small>Welcoming · Family-style</small></div></article>
         </div>
       </section>
 

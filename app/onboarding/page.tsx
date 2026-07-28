@@ -11,6 +11,7 @@ import { BrandMark, Button, Field } from "@/components/ui";
 import { businessInitials, cn, uid } from "@/lib/utils";
 import { ImageUploader } from "@/components/image-uploader";
 import type { MenuItem } from "@/lib/types";
+import { SiteImage } from "@/components/site-image";
 
 const stepNames = ["Business", "Template", "Branding", "Menu", "Publish"];
 
@@ -89,7 +90,7 @@ export default function OnboardingPage() {
     let attemptSlug = previewSlug;
     for (let attempt = 0; attempt < 3 && !businessId; attempt += 1) {
       const row = businessToRow({ ...finalBusiness, slug: attemptSlug }, theme, user.id, { onboarded: true, published: true });
-      const { data: inserted, error } = await supabase.from("businesses").insert(row).select("id").single();
+      const { data: inserted, error } = await supabase.from("businesses").insert({ ...row, published_at: new Date().toISOString() }).select("id").single();
       if (!error && inserted) {
         businessId = inserted.id;
       } else if (error?.code === "23505") {
@@ -176,10 +177,10 @@ export default function OnboardingPage() {
               <Field label="Hero image"><ImageUploader compact value={theme.heroImage} onChange={heroImage => setTheme({ ...theme, heroImage })} label="Upload a hero image" /></Field>
               <Field label="Or paste a hero image URL"><input value={theme.heroImage} onChange={e => setTheme({ ...theme, heroImage: e.target.value })} /></Field>
             </div></div>
-            <div className="mini-live-preview" style={previewStyle}><div className="mini-browser-bar"><span /><span /><span /></div><img src={theme.heroImage} alt="Live website preview" /><div><small>{business.name}</small><h2>{business.tagline}</h2><p>{business.description.slice(0, 96)}…</p><b style={{ borderRadius: theme.buttonShape === "pill" ? 99 : theme.buttonShape === "soft" ? 6 : 0 }}>Plan your event</b></div><em>Live preview</em></div>
+            <div className="mini-live-preview" style={previewStyle}><div className="mini-browser-bar"><span /><span /><span /></div><SiteImage src={theme.heroImage} alt="Live website preview" width={800} /><div><small>{business.name}</small><h2>{business.tagline}</h2><p>{business.description.slice(0, 96)}…</p><b style={{ borderRadius: theme.buttonShape === "pill" ? 99 : theme.buttonShape === "soft" ? 6 : 0 }}>Plan your event</b></div><em>Live preview</em></div>
           </div>}
 
-          {step === 4 && <div className="onboarding-step wide"><span className="step-kicker">04 · Start your menu</span><h1>Add a few dishes or packages.</h1><p>Add your first menu items now, or skip this and build your full menu later.</p><div className="first-menu-list">{items.map((item, index) => <article key={item.id}><img src={item.image} alt="" /><div className="menu-edit-fields"><input aria-label={`Menu item ${index + 1} name`} value={item.name} onChange={e => setItems(current => current.map(entry => entry.id === item.id ? { ...entry, name: e.target.value } : entry))} /><input aria-label={`Menu item ${index + 1} description`} value={item.description} onChange={e => setItems(current => current.map(entry => entry.id === item.id ? { ...entry, description: e.target.value } : entry))} /></div><input className="price-input" aria-label={`Menu item ${index + 1} price`} value={item.price} onChange={e => setItems(current => current.map(entry => entry.id === item.id ? { ...entry, price: e.target.value } : entry))} /><button onClick={() => setItems(current => current.filter(entry => entry.id !== item.id))} aria-label={`Remove ${item.name}`}><Trash2 size={17} /></button></article>)}</div><Button variant="secondary" type="button" onClick={() => setItems(current => [...current, blankMenuItem()])}><Plus size={17} /> Add menu item</Button></div>}
+          {step === 4 && <div className="onboarding-step wide"><span className="step-kicker">04 · Start your menu</span><h1>Add a few dishes or packages.</h1><p>Add your first menu items now, or skip this and build your full menu later.</p><div className="first-menu-list">{items.map((item, index) => <article key={item.id}><SiteImage src={item.image} alt="" width={160} /><div className="menu-edit-fields"><input aria-label={`Menu item ${index + 1} name`} value={item.name} onChange={e => setItems(current => current.map(entry => entry.id === item.id ? { ...entry, name: e.target.value } : entry))} /><input aria-label={`Menu item ${index + 1} description`} value={item.description} onChange={e => setItems(current => current.map(entry => entry.id === item.id ? { ...entry, description: e.target.value } : entry))} /></div><input className="price-input" aria-label={`Menu item ${index + 1} price`} value={item.price} onChange={e => setItems(current => current.map(entry => entry.id === item.id ? { ...entry, price: e.target.value } : entry))} /><button onClick={() => setItems(current => current.filter(entry => entry.id !== item.id))} aria-label={`Remove ${item.name}`}><Trash2 size={17} /></button></article>)}</div><Button variant="secondary" type="button" onClick={() => setItems(current => [...current, blankMenuItem()])}><Plus size={17} /> Add menu item</Button></div>}
 
           {step === 5 && <div className="onboarding-step review-step"><div className="publish-icon"><Rocket size={28} /></div><span className="step-kicker">05 · Ready to gather</span><h1>Your new website is ready.</h1><p>Review the essentials below, then publish your site to its address.</p>
             {publishError && <div className="form-alert">{publishError}</div>}

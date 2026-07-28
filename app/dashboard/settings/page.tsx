@@ -5,7 +5,7 @@ import { useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { useApp } from "@/components/app-provider";
 import { Badge, Button, Field } from "@/components/ui";
-import { cn, uid } from "@/lib/utils";
+import { cn, formatDate, uid } from "@/lib/utils";
 import type { AppState, Business, OpeningHour, SocialLinks } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { businessToRow } from "@/lib/supabase/mappers";
@@ -43,6 +43,19 @@ export default function SettingsPage() {
       const { error } = await createClient().from("businesses").update({ notifications: next }).eq("id", businessId);
       if (error) throw error;
     } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+
+  const setPublished = async (published: boolean) => {
+    const publishedAt = published ? new Date().toISOString() : state.publishedAt;
+    setState(current => ({ ...current, business: { ...current.business, published }, publishedAt }));
+    try {
+      const { error } = await createClient().from("businesses").update({ published, published_at: publishedAt }).eq("id", businessId);
+      if (error) throw error;
+      notify(published ? "Your website is live" : "Your website is now hidden");
+    } catch (err) {
+      setState(current => ({ ...current, business: { ...current.business, published: !published } }));
       notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
     }
   };
@@ -144,8 +157,22 @@ export default function SettingsPage() {
           </>}
 
           {tab === "domain" && <>
-            <div className="settings-heading"><span>Your website address</span><h2>Domain</h2><p>Use your ServeSite address now, then connect a custom domain when you’re ready.</p></div>
-            <div className="domain-current"><div><Globe2 size={20} /><span><small>Current demo subdomain</small><strong>{state.business.slug}.servesite.co</strong></span></div><Badge tone="green"><Check size={13} /> Connected</Badge></div>
+            <div className="settings-heading"><span>Your website address</span><h2>Domain &amp; publishing</h2><p>Use your ServeSite address now, then connect a custom domain when you’re ready.</p></div>
+            <div className="publish-control">
+              <div>
+                <strong>{state.business.published ? "Your website is live" : "Your website is hidden"}</strong>
+                <small>
+                  {state.business.published
+                    ? state.publishedAt ? `Visible to everyone since ${formatDate(state.publishedAt)}.` : "Visible to everyone with the link."
+                    : "Only you can see it. Visitors get a “not available” page."}
+                </small>
+              </div>
+              <label className="switch">
+                <input type="checkbox" checked={state.business.published} onChange={e => void setPublished(e.target.checked)} aria-label="Publish website" />
+                <i />
+              </label>
+            </div>
+            <div className="domain-current"><div><Globe2 size={20} /><span><small>Current demo subdomain</small><strong>{state.business.slug}.servesite.co</strong></span></div>{state.business.published ? <Badge tone="green"><Check size={13} /> Live</Badge> : <Badge>Not published</Badge>}</div>
             <div className="settings-form"><Field label="Website address" hint="Used in your dashboard links and demo subdomain"><input value={state.business.slug} onChange={e => updateBusiness("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"))} /></Field></div>
             <div className="domain-connect"><h3>Connect a custom domain</h3><p>Enter a domain you already own. This prototype simulates the connection steps.</p><div><input placeholder="www.yourcateringbusiness.com" /><Button onClick={() => notify("Domain connection simulated")}>Connect domain</Button></div></div>
             <div className="dns-placeholder"><div><ShieldCheck size={21} /><span><strong>DNS instructions</strong><p>After starting a connection, you’ll receive CNAME and verification records to add at your domain provider.</p></span></div><Badge>Placeholder</Badge></div>

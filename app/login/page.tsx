@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { BrandMark, Button, Field } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
+import { sizedImage } from "@/lib/utils";
 
 export default function LoginPage() {
   return (
@@ -59,7 +60,7 @@ function LoginForm() {
         <small>By continuing, you agree to our demo Terms and Privacy Policy.</small>
       </section>
       <section className="auth-visual">
-        <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=85" alt="Elegant catering presentation" />
+        <img src={sizedImage("https://images.unsplash.com/photo-1555244162-803834f70033", 1200)} alt="Elegant catering presentation" loading="lazy" decoding="async" />
         <div className="auth-quote"><blockquote>“Our website finally feels like the experience we create for our clients.”</blockquote><span>Olivia Ember · Olive &amp; Ember Catering <i>Demo story</i></span></div>
         <div className="auth-floating"><CheckCircle2 size={20} /><span><strong>Your website is live</strong><small>olive-and-ember.servesite.co</small></span></div>
       </section>

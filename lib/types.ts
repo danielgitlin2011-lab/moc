@@ -196,9 +196,17 @@ export interface Lead {
   details: string;
   preferredContact: string;
   hearAboutUs: string;
+  source: string;
+  referrer: string;
   receivedAt: string;
   status: LeadStatus;
   notes: LeadNote[];
+}
+
+/** One aggregated day of website traffic for a published site. */
+export interface SiteVisitDay {
+  date: string;
+  views: number;
 }
 
 export interface Subscription {
@@ -221,6 +229,8 @@ export interface AppState {
   menuItems: MenuItem[];
   gallery: GalleryImage[];
   leads: Lead[];
+  visits: SiteVisitDay[];
+  publishedAt: string | null;
   subscription: Subscription;
   notifications: {
     emailLeads: boolean;

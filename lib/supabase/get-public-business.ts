@@ -63,6 +63,8 @@ export const getPublicBusinessBySlug = cache(async (slug: string): Promise<Publi
     menuItems: (menuItems.data ?? []).map(menuItemRowToMenuItem),
     gallery: (gallery.data ?? []).map(galleryRowToImage),
     leads: [],
+    visits: [],
+    publishedAt: business.published_at,
     subscription: rowToSubscription(business),
     notifications: rowToNotifications(business),
     onboarded: business.onboarded,
