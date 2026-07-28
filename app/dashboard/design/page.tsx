@@ -10,6 +10,7 @@ import type { BusinessTheme } from "@/lib/types";
 import { defaultTheme } from "@/lib/default-theme";
 import { businessInitials } from "@/lib/utils";
 import { ImageUploader } from "@/components/image-uploader";
+import { sanitizeThemeUrls } from "@/lib/supabase/mappers";
 import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/types";
 
@@ -29,7 +30,7 @@ export default function DesignEditorPage() {
 
   const persistTheme = async (nextTheme: BusinessTheme) => {
     try {
-      const { error } = await createClient().from("businesses").update({ theme: nextTheme as unknown as Json }).eq("id", businessId);
+      const { error } = await createClient().from("businesses").update({ theme: sanitizeThemeUrls(nextTheme) as unknown as Json }).eq("id", businessId);
       if (error) throw error;
     } catch (err) {
       notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");

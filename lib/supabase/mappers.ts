@@ -1,4 +1,5 @@
 import { defaultBusiness, defaultTheme } from "@/lib/default-theme";
+import { safeHttpUrl } from "@/lib/utils";
 import type {
   Business,
   BusinessTheme,
@@ -18,6 +19,33 @@ import type {
   WebsiteSection,
 } from "@/lib/types";
 import type { Json, Tables, TablesInsert } from "./types";
+
+/**
+ * URL hygiene for anything a customer can type.
+ *
+ * A `javascript:` or `data:text/html` URL saved into a social field, a map
+ * link, or an image slot becomes stored XSS the moment that business's site is
+ * rendered. `SiteImage` and the public renderer already refuse to emit one, but
+ * rejecting it on the way *in* means the bad value never reaches the database
+ * and cannot resurface through some future call site.
+ */
+export function sanitizeSocial(social: Business["social"]): Business["social"] {
+  const sanitized = { ...social };
+  for (const network of Object.keys(sanitized) as (keyof Business["social"])[]) {
+    sanitized[network] = safeHttpUrl(sanitized[network]);
+  }
+  return sanitized;
+}
+
+/** The theme carries four customer-supplied image URLs; all four are narrowed. */
+export function sanitizeThemeUrls(theme: BusinessTheme): BusinessTheme {
+  return {
+    ...theme,
+    heroImage: safeHttpUrl(theme.heroImage),
+    aboutImage: safeHttpUrl(theme.aboutImage),
+    detailImage: safeHttpUrl(theme.detailImage),
+  };
+}
 
 export function rowToBusiness(row: Tables<"businesses">): Business {
   return {
@@ -71,7 +99,7 @@ export function businessToRow(
     city: business.city,
     address: business.address,
     service_areas: business.serviceAreas,
-    logo: business.logo ?? "",
+    logo: safeHttpUrl(business.logo),
     published: opts?.published ?? business.published,
     founded_year: business.foundedYear,
     team_size: business.teamSize,
@@ -84,9 +112,9 @@ export function businessToRow(
     deposit_policy: business.depositPolicy,
     travel_policy: business.travelPolicy,
     opening_hours: business.openingHours as unknown as Json,
-    social: business.social as unknown as Json,
-    map_url: business.mapUrl,
-    theme: theme as unknown as Json,
+    social: sanitizeSocial(business.social) as unknown as Json,
+    map_url: safeHttpUrl(business.mapUrl),
+    theme: sanitizeThemeUrls(theme) as unknown as Json,
     onboarded: opts?.onboarded ?? false,
   };
 }
@@ -141,7 +169,7 @@ export function serviceToRow(service: Partial<ServiceOffering>): Partial<TablesI
   const row: Partial<TablesInsert<"services">> = {};
   if (service.title !== undefined) row.title = service.title;
   if (service.description !== undefined) row.description = service.description;
-  if (service.image !== undefined) row.image = service.image;
+  if (service.image !== undefined) row.image = safeHttpUrl(service.image);
   if (service.priceFrom !== undefined) row.price_from = service.priceFrom;
   if (service.capacity !== undefined) row.capacity = service.capacity;
   if (service.highlights !== undefined) row.highlights = service.highlights;
@@ -205,7 +233,7 @@ export function teamMemberToRow(member: Partial<TeamMember>): Partial<TablesInse
   if (member.name !== undefined) row.name = member.name;
   if (member.role !== undefined) row.role = member.role;
   if (member.bio !== undefined) row.bio = member.bio;
-  if (member.image !== undefined) row.image = member.image;
+  if (member.image !== undefined) row.image = safeHttpUrl(member.image);
   return row;
 }
 
@@ -251,7 +279,7 @@ export function menuItemToRow(item: MenuItem, businessId: string, categoryId: st
     description: item.description,
     price: item.price,
     pricing_unit: item.pricingUnit,
-    image: item.image,
+    image: safeHttpUrl(item.image),
     dietary: item.dietary,
     allergens: item.allergens,
     ingredients: item.ingredients,
@@ -273,7 +301,7 @@ export function galleryRowToImage(row: Tables<"gallery_images">): GalleryImage {
 
 export function galleryImageToRow(image: Partial<GalleryImage>): Partial<TablesInsert<"gallery_images">> {
   const row: Partial<TablesInsert<"gallery_images">> = {};
-  if (image.url !== undefined) row.url = image.url;
+  if (image.url !== undefined) row.url = safeHttpUrl(image.url);
   if (image.caption !== undefined) row.caption = image.caption;
   if (image.category !== undefined) row.category = image.category;
   if (image.eventType !== undefined) row.event_type = image.eventType;

@@ -9,7 +9,7 @@ import { useApp } from "@/components/app-provider";
 import { Button, Field } from "@/components/ui";
 import { ImageUploader } from "@/components/image-uploader";
 import { createClient } from "@/lib/supabase/client";
-import { sectionToRow } from "@/lib/supabase/mappers";
+import { sanitizeThemeUrls, sectionToRow } from "@/lib/supabase/mappers";
 import type { Json } from "@/lib/supabase/types";
 import type { BusinessTheme } from "@/lib/types";
 
@@ -31,7 +31,7 @@ export default function PreviewPage() {
   };
   const persistTheme = async (nextTheme: BusinessTheme) => {
     try {
-      const { error } = await createClient().from("businesses").update({ theme: nextTheme as unknown as Json }).eq("id", businessId);
+      const { error } = await createClient().from("businesses").update({ theme: sanitizeThemeUrls(nextTheme) as unknown as Json }).eq("id", businessId);
       if (error) throw error;
     } catch (err) {
       notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");

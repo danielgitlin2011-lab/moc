@@ -4,6 +4,7 @@ import { PublicWebsite } from "@/components/public-website";
 import { VisitTracker } from "@/components/visit-tracker";
 import { getPublicBusinessBySlug } from "@/lib/supabase/get-public-business";
 import { requestOrigin } from "@/lib/seo";
+import { serializeJsonLd } from "@/lib/json-ld";
 import { businessJsonLd } from "@/lib/structured-data";
 
 export async function generateMetadata({ params }: { params: Promise<{ businessSlug: string }> }): Promise<Metadata> {
@@ -45,9 +46,11 @@ export default async function CateringSitePage({ params }: { params: Promise<{ b
 
   return (
     <>
+      {/* The graph is built from text the business owner typed, so it is
+          serialised with `<` escaped — see lib/json-ld.ts. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(businessJsonLd(bundle.state, siteUrl, origin)) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(businessJsonLd(bundle.state, siteUrl, origin)) }}
       />
       <PublicWebsite state={bundle.state} businessId={bundle.businessId} />
       <VisitTracker businessId={bundle.businessId} />

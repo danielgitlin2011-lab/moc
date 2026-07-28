@@ -2,7 +2,7 @@
 
 import { ImageOff } from "lucide-react";
 import { useState } from "react";
-import { cn, sizedImage } from "@/lib/utils";
+import { cn, safeHttpUrl, sizedImage } from "@/lib/utils";
 
 type Source = "primary" | "fallback" | "broken";
 
@@ -16,8 +16,8 @@ function firstSource(src?: string, fallback?: string): Source {
  * (the previous approach) loops forever when the fallback is broken too.
  */
 export function SiteImage({
-  src,
-  fallback = "",
+  src: rawSrc,
+  fallback: rawFallback = "",
   alt,
   className,
   width,
@@ -34,6 +34,13 @@ export function SiteImage({
   priority?: boolean;
   sizes?: string;
 }) {
+  // Every customer-supplied image in the product reaches the DOM through this
+  // component, which makes it the one place scheme validation has to happen.
+  // A `javascript:` or `data:text/html` URL becomes "no image" rather than a
+  // payload, and the placeholder below takes over.
+  const src = safeHttpUrl(rawSrc);
+  const fallback = safeHttpUrl(rawFallback);
+
   // New URLs restart at the primary source; adjusting during render (rather than
   // in an effect) avoids rendering the previous image's failure state first.
   const [state, setState] = useState({ src, fallback, source: firstSource(src, fallback) });

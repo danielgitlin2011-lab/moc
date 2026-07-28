@@ -59,6 +59,29 @@ export function fontStack(name: string) {
 }
 
 /**
+ * Narrows a customer-supplied URL to something safe to put in `href` or `src`.
+ *
+ * Everything here — social profiles, map links, logos, hero and gallery
+ * images — is typed by a business owner and rendered to every visitor of their
+ * site. Without this, `javascript:alert(1)` in a social field is stored XSS
+ * against that site's audience, and `data:text/html,…` is very nearly as bad.
+ *
+ * Only absolute http(s) URLs survive; anything else becomes an empty string,
+ * which every call site already treats as "not set".
+ */
+export function safeHttpUrl(value: string | null | undefined): string {
+  if (!value) return "";
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : "";
+  } catch {
+    // Relative paths and malformed input both land here. Every URL this
+    // product stores is absolute, so rejecting them costs nothing.
+    return "";
+  }
+}
+
+/**
  * Requests a right-sized rendition from hosts that support it, so a 4 MB
  * original never gets shipped for a 400 px thumbnail.
  */

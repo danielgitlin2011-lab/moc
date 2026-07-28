@@ -30,7 +30,7 @@ import { QuoteRequestForm } from "./quote-request-form";
 import { SiteChrome } from "./site-chrome";
 import { SiteImage } from "./site-image";
 import { useModalBehavior } from "./use-modal-behavior";
-import { cn, businessInitials, fontStack, yearsInBusiness } from "@/lib/utils";
+import { cn, businessInitials, fontStack, safeHttpUrl, yearsInBusiness } from "@/lib/utils";
 import type { AppState, GalleryImage, WebsiteSection } from "@/lib/types";
 
 const socialGlyphs: Record<string, React.ReactNode> = {
@@ -98,7 +98,14 @@ export function PublicWebsite({
     () => gallery.filter(image => activeCollection === "all" || image.category === activeCollection).slice(0, Math.max(theme.galleryLimit, 3)),
     [gallery, activeCollection, theme.galleryLimit],
   );
-  const socialEntries = Object.entries(business.social).filter(([, url]) => url.trim().length > 0);
+  // Social profiles and the map link are free-text fields in the dashboard and
+  // land in `href` on a page served to the public, so both are narrowed to
+  // absolute http(s) before they are rendered. A rejected URL reads as "not
+  // set", which is exactly how an empty field already behaves.
+  const socialEntries = Object.entries(business.social)
+    .map(([network, url]) => [network, safeHttpUrl(url)] as const)
+    .filter(([, url]) => url.length > 0);
+  const mapUrl = safeHttpUrl(business.mapUrl);
   const averageRating = testimonials.length
     ? (testimonials.reduce((total, item) => total + item.rating, 0) / testimonials.length).toFixed(1)
     : "5.0";
@@ -402,7 +409,7 @@ export function PublicWebsite({
             <div className="area-list">{business.serviceAreas.map(area => <span key={area}>{area}</span>)}</div>
             <div className="contact-detail-grid">
               {business.address && (
-                <article><MapPin size={16} /><span><small>Kitchen &amp; studio</small><strong>{business.address}</strong>{business.mapUrl && <a href={business.mapUrl} target="_blank" rel="noreferrer">Open in maps <ArrowUpRight size={12} /></a>}</span></article>
+                <article><MapPin size={16} /><span><small>Kitchen &amp; studio</small><strong>{business.address}</strong>{mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer">Open in maps <ArrowUpRight size={12} /></a>}</span></article>
               )}
               {theme.showOpeningHours && business.openingHours.length > 0 && (
                 <article><Clock size={16} /><span><small>Office hours</small>{business.openingHours.map(hour => <strong key={hour.id}>{hour.days}<i>{hour.hours}</i></strong>)}</span></article>
