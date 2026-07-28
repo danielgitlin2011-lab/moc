@@ -108,8 +108,8 @@ export default function DesignEditorPage() {
             <DesignChoice label="Service style" value={state.theme.serviceLayout} options={["cards", "rows", "tiles"]} onChange={value => update({ serviceLayout: value as BusinessTheme["serviceLayout"] })} />
             <DesignChoice label="Menu style" value={state.theme.menuLayout} options={["editorial", "cards", "list"]} onChange={value => update({ menuLayout: value as BusinessTheme["menuLayout"] })} />
             <DesignChoice label="Gallery style" value={state.theme.galleryLayout} options={["editorial", "mosaic", "grid"]} onChange={value => update({ galleryLayout: value as BusinessTheme["galleryLayout"] })} />
-            <Field label={`Dishes shown on the homepage · ${state.theme.menuItemLimit}`}><input className="range-control" type="range" min="3" max="12" value={state.theme.menuItemLimit} onChange={e => update({ menuItemLimit: Number(e.target.value) })} /></Field>
-            <Field label={`Gallery images shown · ${state.theme.galleryLimit}`}><input className="range-control" type="range" min="3" max="12" value={state.theme.galleryLimit} onChange={e => update({ galleryLimit: Number(e.target.value) })} /></Field>
+            <Field label={`Dishes shown on the homepage · ${state.theme.menuItemLimit}`}><input className="range-control" type="range" min="3" max="24" value={state.theme.menuItemLimit} onChange={e => update({ menuItemLimit: Number(e.target.value) })} /></Field>
+            <Field label={`Gallery images shown · ${state.theme.galleryLimit}`}><input className="range-control" type="range" min="3" max="24" value={state.theme.galleryLimit} onChange={e => update({ galleryLimit: Number(e.target.value) })} /></Field>
           </ControlSection>
 
           <ControlSection number="07" title="What your menu reveals" blurb="Decide how much detail guests see before they contact you.">

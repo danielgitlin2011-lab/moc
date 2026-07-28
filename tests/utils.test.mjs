@@ -46,8 +46,8 @@ test("sizedImage requests a right-sized rendition, and leaves other hosts alone"
   assert.equal(resized.searchParams.get("w"), "800");
   assert.equal(resized.searchParams.get("auto"), "format");
 
-  const blob = "https://blob.vercel-storage.com/user/pic.webp";
-  assert.equal(sizedImage(blob, 800), blob);
+  const stored = "https://demo-project.supabase.co/storage/v1/object/public/images/user/pic.webp";
+  assert.equal(sizedImage(stored, 800), stored);
   assert.equal(sizedImage("", 800), "");
 });
 

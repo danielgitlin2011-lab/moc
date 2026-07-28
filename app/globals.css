@@ -1596,6 +1596,66 @@ h1, h2, h3, p { margin-top: 0; }
 }
 
 /* ============================================================
+   Generated customer sites — design polish
+   ============================================================ */
+
+/* The gallery grows with the collection. The mosaic used to be a fixed
+   720px frame sized for five or six photographs; anything past that was
+   crushed into the same box. Fixed showcase rows keep the composition of
+   the first screenful, and implicit rows the same height carry every
+   additional image. */
+.gallery-mosaic { height: auto; grid-template-rows: 354px 354px; grid-auto-rows: 330px; }
+.gallery-layout-editorial .gallery-mosaic { grid-template-rows: 420px 288px; grid-auto-rows: 330px; }
+.gallery-layout-grid .gallery-mosaic { grid-template-rows: none; grid-auto-rows: auto; }
+@media (max-width: 820px) {
+  .gallery-mosaic, .gallery-layout-editorial .gallery-mosaic { height: auto; grid-template-rows: 340px 175px 175px; grid-auto-rows: 195px; }
+}
+@media (max-width: 560px) {
+  .gallery-mosaic, .gallery-layout-editorial .gallery-mosaic { grid-template-rows: 240px; grid-auto-rows: 180px; }
+  .gallery-mosaic > button:first-child { grid-row: auto; grid-column: 1/3; }
+}
+
+/* Buttons respond to touch */
+.public-cta, .public-outline-cta { transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }
+.public-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(18,30,24,.24); }
+.public-cta:active { transform: translateY(0); box-shadow: none; }
+.public-outline-cta:hover { border-color: var(--site-primary); background: var(--site-primary); color: #fff; }
+.template-noir .public-outline-cta:hover { border-color: var(--site-accent); background: var(--site-accent); color: #14140f; }
+.public-text-link { transition: border-color .18s ease; }
+.public-text-link:hover { border-color: currentColor; }
+
+/* A calm, consistent ring for keyboard visitors */
+.public-site :focus-visible { outline: 2px solid var(--site-accent); outline-offset: 3px; }
+
+/* Hero: a slow drift on the photograph, and a grounded base so the text
+   stays legible over bright imagery */
+@media (prefers-reduced-motion: no-preference) {
+  .public-site:not(.is-preview) .hero-image-panel > img { animation: hero-drift 26s ease-in-out infinite alternate; }
+}
+@keyframes hero-drift { from { transform: scale(1); } to { transform: scale(1.055); } }
+.hero-image-panel .public-hero-shade { background: linear-gradient(rgba(0,0,0,0) 55%, rgba(10,20,16,.38)), linear-gradient(90deg, rgba(13,29,22,var(--hero-overlay)) 0%, rgba(14,29,23,.38) 58%, rgba(13,25,20,.14) 100%); }
+.hero-layout-centered .hero-image-panel .public-hero-shade { background: linear-gradient(rgba(0,0,0,0) 55%, rgba(10,20,16,.3)), rgba(13,29,22,var(--hero-overlay)); }
+
+/* Card layouts share one soft depth on hover */
+.menu-layout-cards .featured-menu-grid article, .team-grid article, .process-track li { transition: transform .25s ease, box-shadow .25s ease, background .25s ease; }
+.menu-layout-cards .featured-menu-grid article:hover { transform: translateY(-4px); box-shadow: 0 18px 44px rgba(28,42,35,.12); }
+.team-grid article:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(28,42,35,.1); }
+.testimonial-grid article { transition: background .25s ease; }
+.testimonial-grid article:hover { background: rgba(255,255,255,.05); }
+
+/* The inquiry form reads as the site's centrepiece */
+.quote-form, .quote-success { border-radius: var(--site-radius); box-shadow: 0 24px 60px rgba(28,42,35,.09); }
+.quote-form .field input:focus, .quote-form .field textarea:focus, .quote-form .field select:focus { border-color: var(--site-accent); }
+
+/* Chrome details */
+.header-solid .public-header, .public-site:has(.hero-layout-split) .public-header { backdrop-filter: blur(10px); }
+.public-footer a { transition: color .18s ease; }
+.public-footer > div:nth-child(n+2) a:hover { color: #fff; }
+.footer-socials a:hover { transform: translateY(-1px); }
+.whatsapp-float { transition: transform .2s ease, box-shadow .2s ease; }
+.whatsapp-float:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.28); }
+
+/* ============================================================
    Dashboard: content collections editor
    ============================================================ */
 .content-tabs { margin-bottom: 18px; padding: 5px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); display: flex; flex-wrap: wrap; gap: 3px; }

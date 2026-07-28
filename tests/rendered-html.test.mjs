@@ -71,12 +71,14 @@ test("theme switches customers can toggle actually change the rendered site", as
   }
 });
 
-test("image uploads are authenticated, validated, and stored via Vercel Blob", async () => {
+test("image uploads are authenticated, validated, and stored via Supabase Storage", async () => {
   const uploadRoute = await readFile(new URL("app/api/uploads/route.ts", root), "utf8");
   assert.match(uploadRoute, /allowedTypes/);
-  assert.match(uploadRoute, /@vercel\/blob/);
-  assert.match(uploadRoute, /put\(/);
-  // Blob storage costs money — anonymous callers must never reach it.
+  assert.match(uploadRoute, /supabase\.storage\.from\(BUCKET\)\.upload\(/);
+  // The client names the URL a replacement or deletion targets, so the
+  // server must re-check that it is this user's own upload.
+  assert.match(uploadRoute, /ownsUploadUrl/);
+  // Storage costs money — anonymous callers must never reach it.
   assert.match(uploadRoute, /auth\.getUser\(\)/);
   assert.match(uploadRoute, /status: 401/);
   assert.match(uploadRoute, /hasImageSignature/);

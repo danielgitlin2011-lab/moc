@@ -1,14 +1,15 @@
-import { del, list, put } from "@vercel/blob";
 import { createClient } from "@/lib/supabase/server";
-import { ownsBlobUrl } from "@/lib/blob-ownership";
+import { ownsUploadUrl, uploadPathFromUrl } from "@/lib/upload-ownership";
 
+const BUCKET = "images";
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
 /**
  * Ceiling on stored images per account.
  *
- * Blob storage is billed by the byte and an authenticated caller could loop
- * uploads all day. A caterer with a full gallery, a menu, services, and a team
- * lands well under this; anything past it is not a catering website.
+ * Storage is billed by the byte and an authenticated caller could loop
+ * uploads all day. A business with a full gallery, a menu with a photo on
+ * every dish, services, and a team lands well under this; anything past it
+ * is not a business website.
  */
 const MAX_IMAGES_PER_USER = 300;
 
@@ -39,19 +40,10 @@ async function hasImageSignature(file: File, type: string) {
   }
 }
 
-/** Removes a previous rendition, ignoring anything that is not ours to remove. */
-async function deleteIfOwned(url: string | null, userId: string) {
-  if (!url || !ownsBlobUrl(url, userId)) return;
-  try {
-    await del(url);
-  } catch {
-    // A failed cleanup must never fail the upload that triggered it: the new
-    // image is already stored and the user is waiting on it.
-  }
-}
-
 export async function POST(request: Request) {
-  // Uploads write to shared blob storage and cost money — signed-in owners only.
+  // Uploads write to shared storage and cost money — signed-in owners only.
+  // The Storage policies re-check ownership server-side: this client acts as
+  // the signed-in user, and RLS confines writes to their own folder.
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -77,35 +69,41 @@ export async function POST(request: Request) {
 
   // Replacing an image does not count against the quota, because the one it
   // replaces is removed below.
-  const replacing = typeof previousUrl === "string" && ownsBlobUrl(previousUrl, user.id);
+  const replacing = typeof previousUrl === "string" && ownsUploadUrl(previousUrl, user.id);
   if (!replacing) {
-    try {
-      // One extra so a full account is distinguishable from an exactly-full one.
-      const { blobs } = await list({ prefix: `${user.id}/`, limit: MAX_IMAGES_PER_USER + 1 });
-      if (blobs.length >= MAX_IMAGES_PER_USER) {
-        return Response.json(
-          { error: `You've reached the ${MAX_IMAGES_PER_USER}-image limit. Delete a few images and try again.` },
-          { status: 413 },
-        );
-      }
-    } catch {
-      // If the count cannot be read, allow the upload rather than blocking real
-      // work on a storage hiccup. The size and type checks above still apply.
+    // One extra so a full account is distinguishable from an exactly-full one.
+    // If the count cannot be read, allow the upload rather than blocking real
+    // work on a storage hiccup — the size and type checks above still apply.
+    const { data: existing } = await supabase.storage.from(BUCKET).list(user.id, { limit: MAX_IMAGES_PER_USER + 1 });
+    if (existing && existing.length >= MAX_IMAGES_PER_USER) {
+      return Response.json(
+        { error: `You've reached the ${MAX_IMAGES_PER_USER}-image limit. Delete a few images and try again.` },
+        { status: 413 },
+      );
     }
   }
 
   const extension = extensionByType[file.type];
   const key = `${user.id}/${crypto.randomUUID()}.${extension}`;
 
-  try {
-    const blob = await put(key, file, { access: "public", contentType: file.type });
-    // Only once the replacement is safely stored: the old URL is still what the
-    // page renders until this response comes back.
-    if (replacing) await deleteIfOwned(previousUrl as string, user.id);
-    return Response.json({ url: blob.url });
-  } catch {
+  const { error } = await supabase.storage.from(BUCKET).upload(key, file, {
+    contentType: file.type,
+    // Keys are unique per upload, so renditions can be cached hard forever.
+    cacheControl: "31536000",
+  });
+  if (error) {
     return Response.json({ error: "The image could not be stored. Please try again." }, { status: 502 });
   }
+
+  // Only once the replacement is safely stored: the old URL is still what the
+  // page renders until this response comes back. A failed cleanup must never
+  // fail the upload that triggered it, so the result is deliberately ignored.
+  if (replacing) {
+    const previousPath = uploadPathFromUrl(previousUrl as string);
+    if (previousPath) await supabase.storage.from(BUCKET).remove([previousPath]);
+  }
+
+  return Response.json({ url: supabase.storage.from(BUCKET).getPublicUrl(key).data.publicUrl });
 }
 
 /**
@@ -129,15 +127,14 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  if (typeof url !== "string" || !ownsBlobUrl(url, user.id)) {
+  if (typeof url !== "string" || !ownsUploadUrl(url, user.id)) {
     // The same answer whether the URL is malformed or belongs to someone else,
     // so this cannot be used to probe what another account has stored.
     return Response.json({ error: "That image can't be removed." }, { status: 400 });
   }
 
-  try {
-    await del(url);
-  } catch {
+  const { error } = await supabase.storage.from(BUCKET).remove([uploadPathFromUrl(url)]);
+  if (error) {
     return Response.json({ error: "The image could not be removed. Please try again." }, { status: 502 });
   }
 

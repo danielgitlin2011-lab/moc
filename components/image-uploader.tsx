@@ -26,16 +26,7 @@ export function ImageUploader({
     setUploading(true);
     setError("");
     try {
-      const optimizedFile = await optimizeImage(file);
-      const formData = new FormData();
-      formData.append("file", optimizedFile);
-      // Tell the server what this replaces, so the old blob is removed rather
-      // than left public forever. The server re-checks that it is ours.
-      if (value) formData.append("previousUrl", value);
-      const response = await fetch("/api/uploads", { method: "POST", body: formData });
-      const result = await response.json() as { url?: string; error?: string };
-      if (!response.ok || !result.url) throw new Error(result.error || "The image could not be uploaded.");
-      onChange(result.url);
+      onChange(await uploadImageFile(file, value));
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "The image could not be uploaded.");
     } finally {
@@ -84,6 +75,24 @@ export function ImageUploader({
       {error && <p className="upload-error" role="alert">{error}</p>}
     </div>
   );
+}
+
+/**
+ * Uploads one image and resolves to its public URL. Shared by the single-slot
+ * uploader below and the gallery's multi-file flow, so both optimize the file
+ * the same way and hit the same server checks.
+ */
+export async function uploadImageFile(file: File, previousUrl?: string) {
+  const optimizedFile = await optimizeImage(file);
+  const formData = new FormData();
+  formData.append("file", optimizedFile);
+  // Tell the server what this replaces, so the old file is removed rather
+  // than left public forever. The server re-checks that it is ours.
+  if (previousUrl) formData.append("previousUrl", previousUrl);
+  const response = await fetch("/api/uploads", { method: "POST", body: formData });
+  const result = await response.json() as { url?: string; error?: string };
+  if (!response.ok || !result.url) throw new Error(result.error || "The image could not be uploaded.");
+  return result.url;
 }
 
 async function optimizeImage(file: File) {

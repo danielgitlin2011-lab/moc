@@ -18,21 +18,21 @@ import type { NextConfig } from "next";
  * forms and base URLs pinned to this origin.
  */
 function contentSecurityPolicy() {
-  // Customer photography is uploaded to Blob storage and pasted from arbitrary
-  // stock hosts, so `img-src` genuinely has to accept any https origin.
-  // `data:` covers the generated social cards, `blob:` the local preview shown
-  // while an upload is still in flight.
+  // Customer photography is uploaded to Supabase Storage and pasted from
+  // arbitrary stock hosts, so `img-src` genuinely has to accept any https
+  // origin. `data:` covers the generated social cards, `blob:` the local
+  // preview shown while an upload is still in flight.
   const imgSrc = ["'self'", "data:", "blob:", "https:"];
 
-  // Network calls only ever go to this origin, to Blob storage, and to the
-  // project's own Supabase instance — which is known at build time.
+  // Network calls only ever go to this origin and to the project's own
+  // Supabase instance — which is known at build time.
   let supabaseOrigin = "";
   try {
     supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").origin;
   } catch {
     // Not configured at build time; the rest of the policy still applies.
   }
-  const connectSrc = ["'self'", "https://blob.vercel-storage.com", supabaseOrigin].filter(Boolean);
+  const connectSrc = ["'self'", supabaseOrigin].filter(Boolean);
 
   return [
     "default-src 'self'",
