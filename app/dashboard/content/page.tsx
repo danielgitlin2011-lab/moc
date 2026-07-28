@@ -55,6 +55,7 @@ export default function ContentPage() {
   const { state, setState, businessId, notify } = useApp();
   const [tab, setTab] = useState<CollectionKey>("services");
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
+  const [adding, setAdding] = useState(false);
   const activeTab = tabs.find(entry => entry.key === tab)!;
   const items = state[tab] as { id: string }[];
   const section = state.sections.find(entry => entry.id === activeTab.sectionId);
@@ -120,11 +121,13 @@ export default function ContentPage() {
     void persistMove(atIndex.id, target, atTarget.id, index);
   };
   const add = () => {
+    if (adding) return;
     const blank = blanks[tab]();
     const position = items.length;
+    setAdding(true);
     mutate(list => [...list, blank]);
     notify(`New ${activeTab.singular} added`);
-    void persistAdd(blank, position);
+    void persistAdd(blank, position).finally(() => setAdding(false));
   };
   const remove = (id: string) => {
     mutate(list => list.filter(entry => entry.id !== id));
@@ -177,7 +180,7 @@ export default function ContentPage() {
               </span>
             </label>
           )}
-          <Button variant="secondary" onClick={add}><Plus size={16} /> Add {activeTab.singular}</Button>
+          <Button variant="secondary" onClick={add} disabled={adding}><Plus size={16} /> Add {activeTab.singular}</Button>
         </div>
       </div>
 
@@ -186,7 +189,7 @@ export default function ContentPage() {
           icon={<activeTab.icon />}
           title={`No ${activeTab.label.toLowerCase()} yet`}
           body={`${activeTab.blurb} This section stays hidden on your website until you add an entry.`}
-          action={<Button onClick={add}><Plus size={16} /> Add the first one</Button>}
+          action={<Button onClick={add} disabled={adding}><Plus size={16} /> Add the first one</Button>}
         />
       ) : (
         <div className={cn("content-list", tab === "stats" && "content-list-compact")}>

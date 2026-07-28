@@ -29,7 +29,10 @@ export default function SettingsPage() {
       const update: Partial<ReturnType<typeof businessToRow>> = businessToRow(next, state.theme, "", { onboarded: state.onboarded, published: next.published });
       delete update.owner_id;
       const { error } = await createClient().from("businesses").update(update).eq("id", businessId);
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") throw new Error("That website address is already taken — try a different one.");
+        throw error;
+      }
     } catch (err) {
       notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
     }

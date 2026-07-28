@@ -6,6 +6,7 @@ const root = new URL("../", import.meta.url);
 const expectedRoutes = [
   "app/page.tsx",
   "app/login/page.tsx",
+  "app/signup/page.tsx",
   "app/onboarding/page.tsx",
   "app/dashboard/page.tsx",
   "app/dashboard/website/page.tsx",
@@ -34,22 +35,24 @@ test("the production bundle and complete customer journey are present", async ()
 });
 
 test("every content collection reaches the generated website instead of hardcoded copy", async () => {
-  const [publicSite, demoData, contentEditor] = await Promise.all([
+  const [publicSite, defaultTheme, contentEditor] = await Promise.all([
     readFile(new URL("components/public-website.tsx", root), "utf8"),
-    readFile(new URL("lib/demo-data.ts", root), "utf8"),
+    readFile(new URL("lib/default-theme.ts", root), "utf8"),
     readFile(new URL("app/dashboard/content/page.tsx", root), "utf8"),
   ]);
 
   // The site pulls each collection out of application state…
   assert.match(publicSite, /const \{ business, theme, sections, services, testimonials, faqs, stats, processSteps, team, menuItems, categories, gallery \} = state;/);
-  // …and renders every section the seeded data declares.
+  // …and renders every section the default template declares.
   for (const id of ["stats", "about", "services", "process", "menus", "gallery", "team", "testimonials", "faq", "contact", "quote"]) {
     assert.match(publicSite, new RegExp(`case "${id}":`), `the public site should render the "${id}" section`);
   }
-  // No sample copy may be duplicated inside the renderer.
+  // No seeded sample copy may be duplicated inside the renderer — every business's
+  // real content comes from Supabase, not from any local seed data.
   assert.doesNotMatch(publicSite, /How far in advance should we book/);
   assert.doesNotMatch(publicSite, /Olive & Ember/);
-  assert.match(demoData, /How far in advance should we book/);
+  assert.doesNotMatch(publicSite, /useApp/);
+  assert.match(defaultTheme, /export const defaultSections/);
 
   // Each collection is editable from the dashboard.
   for (const key of ["services", "stats", "processSteps", "team", "testimonials", "faqs"]) {
@@ -73,4 +76,27 @@ test("image uploads are validated and stored via Vercel Blob", async () => {
   assert.match(uploadRoute, /allowedTypes/);
   assert.match(uploadRoute, /@vercel\/blob/);
   assert.match(uploadRoute, /put\(/);
+});
+
+test("no page reads or writes local/demo state — everything is backed by Supabase", async () => {
+  const guardedFiles = [
+    "app/login/page.tsx",
+    "app/signup/page.tsx",
+    "app/onboarding/page.tsx",
+    "app/dashboard/layout.tsx",
+    "app/preview/layout.tsx",
+    "components/app-provider.tsx",
+    "components/quote-request-form.tsx",
+  ];
+  const contents = await Promise.all(guardedFiles.map(file => readFile(new URL(file, root), "utf8")));
+  contents.forEach((content, index) => {
+    assert.doesNotMatch(content, /localStorage/, `${guardedFiles[index]} should not touch localStorage`);
+  });
+
+  const [appProvider, getBusinessBundle] = await Promise.all([
+    readFile(new URL("components/app-provider.tsx", root), "utf8"),
+    readFile(new URL("lib/supabase/get-business-bundle.ts", root), "utf8"),
+  ]);
+  assert.match(appProvider, /initialState/, "AppProvider should be seeded from server-fetched state, not demo data");
+  assert.match(getBusinessBundle, /getBusinessBundleForUser/);
 });

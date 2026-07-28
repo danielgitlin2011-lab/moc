@@ -141,6 +141,7 @@ export default function MenuPage() {
 function CategoryManager({ onClose }: { onClose: () => void }) {
   const { state, setState, businessId, notify } = useApp();
   const [name, setName] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
 
   const move = (index: number, direction: -1 | 1) => {
     const target = index + direction;
@@ -203,10 +204,11 @@ function CategoryManager({ onClose }: { onClose: () => void }) {
 
   const add = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || addingCategory) return;
     const tempId = uid("category");
     const position = state.categories.length;
     const created: MenuCategory = { id: tempId, name, description: "" };
+    setAddingCategory(true);
     setState(current => ({ ...current, categories: [...current.categories, created] }));
     setName("");
     void (async () => {
@@ -217,9 +219,11 @@ function CategoryManager({ onClose }: { onClose: () => void }) {
         setState(current => ({ ...current, categories: current.categories.map(entry => entry.id === tempId ? { ...entry, id: data.id } : entry) }));
       } catch (err) {
         notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+      } finally {
+        setAddingCategory(false);
       }
     })();
   };
 
-  return <div className="modal-backdrop" onMouseDown={onClose}><div className="category-dialog" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()}><header><div><span>Menu structure</span><h2>Manage categories</h2></div><button onClick={onClose}>Done</button></header><p className="category-hint">Category names become the tabs on your website. The description appears above the dishes in that tab.</p><div className="category-list">{state.categories.map((category, index) => <div key={category.id}><span>{index + 1}</span><div className="category-fields"><input aria-label={`${category.name} category name`} value={category.name} onChange={e => patch(category.id, { name: e.target.value })} /><input aria-label={`${category.name} description`} value={category.description} onChange={e => patch(category.id, { description: e.target.value })} placeholder="Short description shown on your website" /></div><button onClick={() => move(index, -1)} disabled={index === 0} aria-label="Move up"><ArrowUp size={15} /></button><button onClick={() => move(index, 1)} disabled={index === state.categories.length - 1} aria-label="Move down"><ArrowDown size={15} /></button><button className="danger-text" aria-label="Delete category" onClick={() => remove(category.id)}><Trash2 size={15} /></button></div>)}</div><form onSubmit={add}><input value={name} onChange={e => setName(e.target.value)} placeholder="New category name" /><Button type="submit"><Plus size={15} /> Add category</Button></form></div></div>;
+  return <div className="modal-backdrop" onMouseDown={onClose}><div className="category-dialog" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()}><header><div><span>Menu structure</span><h2>Manage categories</h2></div><button onClick={onClose}>Done</button></header><p className="category-hint">Category names become the tabs on your website. The description appears above the dishes in that tab.</p><div className="category-list">{state.categories.map((category, index) => <div key={category.id}><span>{index + 1}</span><div className="category-fields"><input aria-label={`${category.name} category name`} value={category.name} onChange={e => patch(category.id, { name: e.target.value })} /><input aria-label={`${category.name} description`} value={category.description} onChange={e => patch(category.id, { description: e.target.value })} placeholder="Short description shown on your website" /></div><button onClick={() => move(index, -1)} disabled={index === 0} aria-label="Move up"><ArrowUp size={15} /></button><button onClick={() => move(index, 1)} disabled={index === state.categories.length - 1} aria-label="Move down"><ArrowDown size={15} /></button><button className="danger-text" aria-label="Delete category" onClick={() => remove(category.id)}><Trash2 size={15} /></button></div>)}</div><form onSubmit={add}><input value={name} onChange={e => setName(e.target.value)} placeholder="New category name" /><Button type="submit" disabled={addingCategory}><Plus size={15} /> Add category</Button></form></div></div>;
 }

@@ -42,7 +42,7 @@ export default function SignupPage() {
     }
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
-      setError(`Account created, but sign-in failed: ${signInError.message}. Email confirmation may still be required in the Supabase Auth settings — check the "Confirm email" toggle in the Dashboard.`);
+      setError("Your account was created. Please check your email to confirm it, then log in.");
       setLoading(false);
       return;
     }

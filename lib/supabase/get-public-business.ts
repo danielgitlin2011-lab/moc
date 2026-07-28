@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { defaultSections } from "@/lib/default-theme";
 import type { AppState } from "@/lib/types";
 import {
@@ -23,7 +24,7 @@ export interface PublicBusinessBundle {
   state: AppState;
 }
 
-export async function getPublicBusinessBySlug(slug: string): Promise<PublicBusinessBundle | null> {
+export const getPublicBusinessBySlug = cache(async (slug: string): Promise<PublicBusinessBundle | null> => {
   const supabase = await createClient();
 
   const { data: business } = await supabase.from("businesses").select("*").eq("slug", slug).eq("published", true).maybeSingle();
@@ -68,4 +69,4 @@ export async function getPublicBusinessBySlug(slug: string): Promise<PublicBusin
   };
 
   return { businessId, state };
-}
+});
