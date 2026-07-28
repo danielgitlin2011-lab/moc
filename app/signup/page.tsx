@@ -2,40 +2,51 @@
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Eye, EyeOff } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { BrandMark, Button, Field } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginForm />
-    </Suspense>
-  );
-}
-
-function LoginForm() {
+export default function SignupPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
     setLoading(true);
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInError) {
-      setError(signInError.message);
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    if (signUpError) {
+      setError(signUpError.message);
       setLoading(false);
       return;
     }
-    router.push(searchParams.get("next") || "/dashboard");
+    if (data.session) {
+      router.push("/onboarding");
+      router.refresh();
+      return;
+    }
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      setError(`Account created, but sign-in failed: ${signInError.message}. Email confirmation may still be required in the Supabase Auth settings — check the "Confirm email" toggle in the Dashboard.`);
+      setLoading(false);
+      return;
+    }
+    router.push("/onboarding");
     router.refresh();
   };
 
@@ -44,17 +55,17 @@ function LoginForm() {
       <section className="auth-panel">
         <BrandMark />
         <div className="auth-form-wrap">
-          <span className="eyebrow plain">Welcome back</span>
-          <h1>Continue building your business.</h1>
-          <p>Log in to update your site, manage menus, and respond to new event inquiries.</p>
+          <span className="eyebrow plain">Start your trial</span>
+          <h1>Build your catering website in minutes.</h1>
+          <p>Create your account, then we&apos;ll walk you through setting up your business.</p>
           <form onSubmit={submit}>
             {error && <div className="form-alert">{error}</div>}
             <Field label="Email address"><input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></Field>
             <Field label="Password"><div className="password-field"><input type={showPassword ? "text" : "password"} required value={password} onChange={e => setPassword(e.target.value)} /><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></Field>
-            <div className="form-row"><label><input type="checkbox" defaultChecked /> Remember me</label><button type="button" onClick={() => window.alert("Password reset is not available yet — contact support.")}>Forgot password?</button></div>
-            <Button type="submit" disabled={loading}>{loading ? "Signing in…" : <>Log in <ArrowRight size={17} /></>}</Button>
+            <Field label="Confirm password"><input type={showPassword ? "text" : "password"} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /></Field>
+            <Button type="submit" disabled={loading}>{loading ? "Creating account…" : <>Create account <ArrowRight size={17} /></>}</Button>
           </form>
-          <p className="auth-switch">New to ServeSite? <Link href="/signup">Start your free trial</Link></p>
+          <p className="auth-switch">Already have an account? <Link href="/login">Log in</Link></p>
         </div>
         <small>By continuing, you agree to our demo Terms and Privacy Policy.</small>
       </section>
