@@ -7,9 +7,11 @@ import { WebsitePreview } from "@/components/website-preview";
 import { useApp } from "@/components/app-provider";
 import { Button, Field } from "@/components/ui";
 import type { BusinessTheme } from "@/lib/types";
-import { initialData } from "@/lib/demo-data";
+import { defaultTheme } from "@/lib/default-theme";
 import { businessInitials } from "@/lib/utils";
 import { ImageUploader } from "@/components/image-uploader";
+import { createClient } from "@/lib/supabase/client";
+import type { Json } from "@/lib/supabase/types";
 
 const headingFonts = ["Cormorant Garamond", "Playfair Display", "Fraunces", "Libre Baskerville", "Inter"];
 const bodyFonts = ["Inter", "Source Sans", "DM Sans", "Lato", "Work Sans"];
@@ -23,8 +25,22 @@ const palettes: { name: string; primary: string; accent: string; surface: string
 ];
 
 export default function DesignEditorPage() {
-  const { state, setState, notify } = useApp();
-  const update = (patch: Partial<BusinessTheme>) => setState(current => ({ ...current, theme: { ...current.theme, ...patch } }));
+  const { state, setState, businessId, notify } = useApp();
+
+  const persistTheme = async (nextTheme: BusinessTheme) => {
+    try {
+      const { error } = await createClient().from("businesses").update({ theme: nextTheme as unknown as Json }).eq("id", businessId);
+      if (error) throw error;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+
+  const update = (patch: Partial<BusinessTheme>) => {
+    const next = { ...state.theme, ...patch };
+    setState(current => ({ ...current, theme: next }));
+    void persistTheme(next);
+  };
   const monogram = businessInitials(state.business.name);
 
   return (
@@ -67,7 +83,17 @@ export default function DesignEditorPage() {
 
           <ControlSection number="04" title="Brand assets" blurb="Upload a logo that appears in your navigation and footer.">
             <div className="asset-control-label"><ImagePlus size={16} /><span><strong>Business logo</strong><small>Transparent PNG or WebP works best. Without one we use the “{monogram}” monogram.</small></span></div>
-            <ImageUploader compact value={state.business.logo} onChange={logo => setState(current => ({ ...current, business: { ...current.business, logo: logo || undefined } }))} />
+            <ImageUploader compact value={state.business.logo} onChange={logo => {
+              setState(current => ({ ...current, business: { ...current.business, logo: logo || undefined } }));
+              void (async () => {
+                try {
+                  const { error } = await createClient().from("businesses").update({ logo: logo || "" }).eq("id", businessId);
+                  if (error) throw error;
+                } catch (err) {
+                  notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+                }
+              })();
+            }} />
           </ControlSection>
 
           <ControlSection number="05" title="Hero composition" blurb="Control the first impression without breaking the layout.">
@@ -105,7 +131,7 @@ export default function DesignEditorPage() {
             {state.theme.showAnnouncement && <Field label="Announcement text"><input value={state.theme.announcementText} onChange={e => update({ announcementText: e.target.value })} /></Field>}
           </ControlSection>
 
-          <button className="reset-design" onClick={() => { setState(current => ({ ...current, theme: initialData.theme })); notify("Template defaults restored"); }}><RotateCcw size={16} /> Reset to template defaults</button>
+          <button className="reset-design" onClick={() => { setState(current => ({ ...current, theme: defaultTheme })); notify("Template defaults restored"); void persistTheme(defaultTheme); }}><RotateCcw size={16} /> Reset to template defaults</button>
         </div>
         <aside className="design-preview-sticky">
           <div><span>Live website preview</span><small>All changes appear instantly</small></div>

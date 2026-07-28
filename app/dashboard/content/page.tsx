@@ -8,6 +8,8 @@ import { Button, ConfirmDialog, EmptyState, Field } from "@/components/ui";
 import { ImageUploader } from "@/components/image-uploader";
 import { cn, uid } from "@/lib/utils";
 import type { AppState, FaqEntry, ProcessStep, ServiceOffering, StatHighlight, TeamMember, Testimonial } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
+import { faqToRow, processStepToRow, serviceToRow, statToRow, teamMemberToRow, testimonialToRow } from "@/lib/supabase/mappers";
 
 type CollectionKey = "services" | "stats" | "processSteps" | "team" | "testimonials" | "faqs";
 
@@ -29,8 +31,28 @@ const blanks: Record<CollectionKey, () => { id: string }> = {
   faqs: (): FaqEntry => ({ id: uid("faq"), question: "New question", answer: "" }),
 };
 
+const tableNames: Record<CollectionKey, "services" | "stats" | "process_steps" | "team_members" | "testimonials" | "faqs"> = {
+  services: "services",
+  stats: "stats",
+  processSteps: "process_steps",
+  team: "team_members",
+  testimonials: "testimonials",
+  faqs: "faqs",
+};
+
+function toRow(tab: CollectionKey, item: Record<string, unknown>): Record<string, unknown> {
+  switch (tab) {
+    case "services": return serviceToRow(item as Partial<ServiceOffering>);
+    case "stats": return statToRow(item as Partial<StatHighlight>);
+    case "processSteps": return processStepToRow(item as Partial<ProcessStep>);
+    case "team": return teamMemberToRow(item as Partial<TeamMember>);
+    case "testimonials": return testimonialToRow(item as Partial<Testimonial>);
+    case "faqs": return faqToRow(item as Partial<FaqEntry>);
+  }
+}
+
 export default function ContentPage() {
-  const { state, setState, notify } = useApp();
+  const { state, setState, businessId, notify } = useApp();
   const [tab, setTab] = useState<CollectionKey>("services");
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
   const activeTab = tabs.find(entry => entry.key === tab)!;
@@ -39,16 +61,76 @@ export default function ContentPage() {
 
   const mutate = (transform: (list: { id: string }[]) => { id: string }[]) =>
     setState(current => ({ ...current, [tab]: transform(current[tab] as { id: string }[]) } as AppState));
-  const update = (id: string, patch: Record<string, unknown>) => mutate(list => list.map(entry => entry.id === id ? { ...entry, ...patch } : entry));
-  const move = (index: number, direction: -1 | 1) => mutate(list => {
+
+  const persistAdd = async (item: { id: string }, position: number) => {
+    try {
+      const row = { ...toRow(tab, item as Record<string, unknown>), business_id: businessId, position };
+      const { data, error } = await createClient().from(tableNames[tab]).insert(row).select("id").single();
+      if (error) throw error;
+      mutate(list => list.map(entry => entry.id === item.id ? { ...entry, id: data.id } : entry));
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+  const persistUpdate = async (id: string, patch: Record<string, unknown>) => {
+    try {
+      const row = toRow(tab, patch);
+      const { error } = await createClient().from(tableNames[tab]).update(row as never).eq("business_id", businessId).eq("id", id);
+      if (error) throw error;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+  const persistMove = async (idAtIndex: string, newIndexPosition: number, idAtTarget: string, newTargetPosition: number) => {
+    try {
+      const supabase = createClient();
+      const table = tableNames[tab];
+      const [{ error: errorA }, { error: errorB }] = await Promise.all([
+        supabase.from(table).update({ position: newIndexPosition }).eq("business_id", businessId).eq("id", idAtIndex),
+        supabase.from(table).update({ position: newTargetPosition }).eq("business_id", businessId).eq("id", idAtTarget),
+      ]);
+      if (errorA || errorB) throw errorA || errorB;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+    }
+  };
+  const persistRemove = async (id: string) => {
+    try {
+      const { error } = await createClient().from(tableNames[tab]).delete().eq("business_id", businessId).eq("id", id);
+      if (error) throw error;
+    } catch (err) {
+      notify(err instanceof Error ? `Couldn't delete: ${err.message}` : "Couldn't delete entry");
+    }
+  };
+
+  const update = (id: string, patch: Record<string, unknown>) => {
+    mutate(list => list.map(entry => entry.id === id ? { ...entry, ...patch } : entry));
+    void persistUpdate(id, patch);
+  };
+  const move = (index: number, direction: -1 | 1) => {
     const target = index + direction;
-    if (target < 0 || target >= list.length) return list;
-    const next = [...list];
-    [next[index], next[target]] = [next[target], next[index]];
-    return next;
-  });
-  const add = () => { mutate(list => [...list, blanks[tab]()]); notify(`New ${activeTab.singular} added`); };
-  const remove = (id: string) => { mutate(list => list.filter(entry => entry.id !== id)); notify(`${activeTab.singular} deleted`); };
+    if (target < 0 || target >= items.length) return;
+    const atIndex = items[index];
+    const atTarget = items[target];
+    mutate(list => {
+      const next = [...list];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+    void persistMove(atIndex.id, target, atTarget.id, index);
+  };
+  const add = () => {
+    const blank = blanks[tab]();
+    const position = items.length;
+    mutate(list => [...list, blank]);
+    notify(`New ${activeTab.singular} added`);
+    void persistAdd(blank, position);
+  };
+  const remove = (id: string) => {
+    mutate(list => list.filter(entry => entry.id !== id));
+    notify(`${activeTab.singular} deleted`);
+    void persistRemove(id);
+  };
 
   return (
     <DashboardShell
@@ -78,7 +160,18 @@ export default function ContentPage() {
                 <input
                   type="checkbox"
                   checked={section.visible}
-                  onChange={event => setState(current => ({ ...current, sections: current.sections.map(entry => entry.id === section.id ? { ...entry, visible: event.target.checked } : entry) }))}
+                  onChange={event => {
+                    const visible = event.target.checked;
+                    setState(current => ({ ...current, sections: current.sections.map(entry => entry.id === section.id ? { ...entry, visible } : entry) }));
+                    void (async () => {
+                      try {
+                        const { error } = await createClient().from("website_sections").update({ visible }).eq("business_id", businessId).eq("section_key", section.id);
+                        if (error) throw error;
+                      } catch (err) {
+                        notify(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save changes");
+                      }
+                    })();
+                  }}
                 />
                 <i />
               </span>

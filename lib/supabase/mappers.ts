@@ -137,28 +137,87 @@ export function serviceRowToService(row: Tables<"services">): ServiceOffering {
   return { id: row.id, title: row.title, description: row.description, image: row.image, priceFrom: row.price_from, capacity: row.capacity, highlights: row.highlights };
 }
 
+export function serviceToRow(service: Partial<ServiceOffering>): Partial<TablesInsert<"services">> {
+  const row: Partial<TablesInsert<"services">> = {};
+  if (service.title !== undefined) row.title = service.title;
+  if (service.description !== undefined) row.description = service.description;
+  if (service.image !== undefined) row.image = service.image;
+  if (service.priceFrom !== undefined) row.price_from = service.priceFrom;
+  if (service.capacity !== undefined) row.capacity = service.capacity;
+  if (service.highlights !== undefined) row.highlights = service.highlights;
+  return row;
+}
+
 export function testimonialRowToTestimonial(row: Tables<"testimonials">): Testimonial {
   return { id: row.id, quote: row.quote, author: row.author, context: row.context, rating: row.rating, eventDate: row.event_date };
+}
+
+export function testimonialToRow(testimonial: Partial<Testimonial>): Partial<TablesInsert<"testimonials">> {
+  const row: Partial<TablesInsert<"testimonials">> = {};
+  if (testimonial.quote !== undefined) row.quote = testimonial.quote;
+  if (testimonial.author !== undefined) row.author = testimonial.author;
+  if (testimonial.context !== undefined) row.context = testimonial.context;
+  if (testimonial.rating !== undefined) row.rating = testimonial.rating;
+  if (testimonial.eventDate !== undefined) row.event_date = testimonial.eventDate;
+  return row;
 }
 
 export function faqRowToFaq(row: Tables<"faqs">): FaqEntry {
   return { id: row.id, question: row.question, answer: row.answer };
 }
 
+export function faqToRow(faq: Partial<FaqEntry>): Partial<TablesInsert<"faqs">> {
+  const row: Partial<TablesInsert<"faqs">> = {};
+  if (faq.question !== undefined) row.question = faq.question;
+  if (faq.answer !== undefined) row.answer = faq.answer;
+  return row;
+}
+
 export function statRowToStat(row: Tables<"stats">): StatHighlight {
   return { id: row.id, value: row.value, label: row.label };
+}
+
+export function statToRow(stat: Partial<StatHighlight>): Partial<TablesInsert<"stats">> {
+  const row: Partial<TablesInsert<"stats">> = {};
+  if (stat.value !== undefined) row.value = stat.value;
+  if (stat.label !== undefined) row.label = stat.label;
+  return row;
 }
 
 export function processStepRowToProcessStep(row: Tables<"process_steps">): ProcessStep {
   return { id: row.id, title: row.title, description: row.description, duration: row.duration };
 }
 
+export function processStepToRow(step: Partial<ProcessStep>): Partial<TablesInsert<"process_steps">> {
+  const row: Partial<TablesInsert<"process_steps">> = {};
+  if (step.title !== undefined) row.title = step.title;
+  if (step.description !== undefined) row.description = step.description;
+  if (step.duration !== undefined) row.duration = step.duration;
+  return row;
+}
+
 export function teamRowToTeamMember(row: Tables<"team_members">): TeamMember {
   return { id: row.id, name: row.name, role: row.role, bio: row.bio, image: row.image };
 }
 
+export function teamMemberToRow(member: Partial<TeamMember>): Partial<TablesInsert<"team_members">> {
+  const row: Partial<TablesInsert<"team_members">> = {};
+  if (member.name !== undefined) row.name = member.name;
+  if (member.role !== undefined) row.role = member.role;
+  if (member.bio !== undefined) row.bio = member.bio;
+  if (member.image !== undefined) row.image = member.image;
+  return row;
+}
+
 export function categoryRowToCategory(row: Tables<"menu_categories">): MenuCategory {
   return { id: row.id, name: row.name, description: row.description };
+}
+
+export function menuCategoryToRow(category: Partial<MenuCategory>): Partial<TablesInsert<"menu_categories">> {
+  const row: Partial<TablesInsert<"menu_categories">> = {};
+  if (category.name !== undefined) row.name = category.name;
+  if (category.description !== undefined) row.description = category.description;
+  return row;
 }
 
 export function menuItemRowToMenuItem(row: Tables<"menu_items">): MenuItem {
@@ -210,6 +269,18 @@ export function menuItemToRow(item: MenuItem, businessId: string, categoryId: st
 
 export function galleryRowToImage(row: Tables<"gallery_images">): GalleryImage {
   return { id: row.id, url: row.url, caption: row.caption, category: row.category, eventType: row.event_type, guestCount: row.guest_count, location: row.location, featured: row.featured };
+}
+
+export function galleryImageToRow(image: Partial<GalleryImage>): Partial<TablesInsert<"gallery_images">> {
+  const row: Partial<TablesInsert<"gallery_images">> = {};
+  if (image.url !== undefined) row.url = image.url;
+  if (image.caption !== undefined) row.caption = image.caption;
+  if (image.category !== undefined) row.category = image.category;
+  if (image.eventType !== undefined) row.event_type = image.eventType;
+  if (image.guestCount !== undefined) row.guest_count = image.guestCount;
+  if (image.location !== undefined) row.location = image.location;
+  if (image.featured !== undefined) row.featured = image.featured;
+  return row;
 }
 
 export function leadNoteRowToNote(row: Tables<"lead_notes">): LeadNote {
