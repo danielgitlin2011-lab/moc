@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandMark, Button, Field } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorMessage } from "@/lib/auth-errors";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { sizedImage } from "@/lib/utils";
 
 export default function SignupPage() {
@@ -24,15 +26,15 @@ export default function SignupPage() {
       setError("Passwords do not match.");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
     }
     setLoading(true);
     const supabase = createClient();
     const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
     if (signUpError) {
-      setError(signUpError.message);
+      setError(authErrorMessage(signUpError, "We couldn't create your account. Please try again."));
       setLoading(false);
       return;
     }
@@ -60,15 +62,15 @@ export default function SignupPage() {
           <h1>Build your catering website in minutes.</h1>
           <p>Create your account, then we&apos;ll walk you through setting up your business.</p>
           <form onSubmit={submit}>
-            {error && <div className="form-alert">{error}</div>}
+            {error && <div className="form-alert" role="alert">{error}</div>}
             <Field label="Email address"><input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></Field>
-            <Field label="Password"><div className="password-field"><input type={showPassword ? "text" : "password"} required value={password} onChange={e => setPassword(e.target.value)} /><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></Field>
-            <Field label="Confirm password"><input type={showPassword ? "text" : "password"} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /></Field>
+            <Field label="Password" hint={`At least ${MIN_PASSWORD_LENGTH} characters`}><div className="password-field"><input type={showPassword ? "text" : "password"} required autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} value={password} onChange={e => setPassword(e.target.value)} /><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></Field>
+            <Field label="Confirm password"><input type={showPassword ? "text" : "password"} required autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /></Field>
             <Button type="submit" disabled={loading}>{loading ? "Creating account…" : <>Create account <ArrowRight size={17} /></>}</Button>
           </form>
           <p className="auth-switch">Already have an account? <Link href="/login">Log in</Link></p>
         </div>
-        <small>By continuing, you agree to our demo Terms and Privacy Policy.</small>
+        <small>By continuing, you agree to our <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>.</small>
       </section>
       <section className="auth-visual">
         <img src={sizedImage("https://images.unsplash.com/photo-1555244162-803834f70033", 1200)} alt="Elegant catering presentation" loading="lazy" decoding="async" />

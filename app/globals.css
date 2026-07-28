@@ -2108,3 +2108,30 @@ h1, h2, h3, p { margin-top: 0; }
   .back-to-top { bottom: 74px; }
   .public-footer { padding-bottom: 90px; }
 }
+
+/* ============================================================
+   Auth notices and the legal pages
+   ============================================================ */
+.form-notice { padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); background: var(--green-soft); color: var(--green-ink); border-radius: var(--radius-xs); font-size: var(--fs-base); line-height: 1.5; }
+
+.legal-page { min-height: 100vh; background: var(--paper); color: var(--ink); }
+.legal-nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.legal-nav a { color: var(--green); font-size: var(--fs-base); font-weight: 650; }
+.legal-page article { max-width: 720px; padding: 56px 0 72px; }
+.legal-page h1 { margin: 12px 0 18px; font-family: var(--font-display); font-size: clamp(38px, 5vw, 54px); line-height: 1.05; font-weight: 400; letter-spacing: -.03em; }
+.legal-lede { margin: 0; color: var(--muted); font-size: var(--fs-lg); line-height: 1.7; }
+.legal-page section { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+.legal-page h2 { margin: 0 0 12px; font-family: var(--font-display); font-size: 25px; font-weight: 400; }
+.legal-page p { margin: 0 0 14px; color: var(--ink-soft); font-size: var(--fs-md); line-height: 1.75; }
+.legal-page p:last-child { margin-bottom: 0; }
+.legal-page ul { list-style: disc; margin: 0 0 14px; padding-left: 22px; color: var(--ink-soft); font-size: var(--fs-md); line-height: 1.75; }
+.legal-page li { margin-bottom: 8px; }
+.legal-page a { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+.legal-footer { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: var(--fs-base); }
+.legal-footer p { margin: 0; }
+.legal-footer div { display: flex; gap: 20px; }
+
+@media (max-width: 560px) {
+  .legal-page article { padding: 34px 0 48px; }
+  .legal-footer { flex-direction: column; align-items: flex-start; gap: 10px; padding-block: 24px; }
+}

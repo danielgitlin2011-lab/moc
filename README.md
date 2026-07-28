@@ -167,6 +167,72 @@ Templates, palettes, fonts, and disclosure toggles are theme values rather than 
 - Images load lazily, request a right-sized rendition from hosts that support it, and degrade to a placeholder instead of retrying a broken URL forever.
 - `/api/uploads` requires a signed-in session and verifies the file's magic bytes; uploads are namespaced per user. Security headers are set in `next.config.ts`. The quote form carries a honeypot and a submit-timing check.
 
+## Security operations
+
+Some of what protects this product is configuration rather than code. The
+application enforces what it can; the rest has to be switched on in the
+Supabase project, and is listed here so it does not get forgotten.
+
+### Turn these on in Supabase Auth
+
+| Setting | Why |
+| --- | --- |
+| **Leaked password protection** (Auth → Policies) | Checks new passwords against the Have I Been Pwned corpus. The app enforces an eight-character minimum, which stops nothing on its own — reuse of an already-breached password is the realistic failure. |
+| **Minimum password length = 8** | Matches `MIN_PASSWORD_LENGTH` in `lib/password.ts`, so the server agrees with the form. |
+| **MFA (TOTP)** (Auth → Multi-Factor) | Available on every project. Enabling the factor is a project setting; the app does not yet render enrolment or challenge screens, so treat this as configured-but-unsurfaced until that UI exists. |
+| **Rate limits** (Auth → Rate Limits) | Caps sign-in, sign-up, and password-reset email attempts per hour. The in-process limiter in `lib/rate-limit.ts` does not survive multiple serverless instances and is not a substitute. |
+| **Confirm email** | Keeps someone from claiming an address they do not control. |
+
+### Applying the migrations
+
+`supabase/migrations/` runs in filename order, with one deliberate exception:
+`20260728161000_restrict_anon_lead_insert.sql` removes anon's INSERT on
+`leads` and must be applied **after** a deployment containing
+`app/api/leads/route.ts` is live and a real submission has succeeded through
+it. Until then both paths work; after it, `public.submit_lead` is the only
+way a lead can be created. The file carries its own rollback.
+
+The CHECK constraints are added `NOT VALID`, so they apply in full to every
+future write while grandfathering rows that predate them. Once existing data
+is known to comply, run `alter table … validate constraint …`.
+
+### Known gaps
+
+- **Bot submissions.** `/api/leads` checks a honeypot, submit timing, and a
+  per-IP ceiling, and `public.submit_lead` adds a per-business hourly ceiling
+  that survives someone calling PostgREST directly. None of that is a CAPTCHA.
+  Verifying a Turnstile or reCAPTCHA token inside `submit_lead` is the real
+  fix and the next thing to build.
+- **Nonce-based CSP.** `script-src` still carries `'unsafe-inline'` because
+  Next streams the RSC payload through per-request inline scripts. Minting a
+  nonce in `proxy.ts` and letting Next stamp its own tags removes it.
+- **No security event monitoring.** Failed sign-ins, password resets, and
+  rate-limit rejections are not logged anywhere durable and nothing alerts on
+  them, so a slow credential-stuffing run against the login form would pass
+  unnoticed. Supabase Auth logs record the attempts; shipping them somewhere
+  with alerting is outstanding work.
+
+### Deleting an account and its data
+
+There is no self-service delete button yet. The documented procedure is:
+
+1. The account holder emails `privacy@servesite.example` from the address on
+   the account.
+2. Identity is confirmed against that address.
+3. The row in `businesses` is deleted. Every child table — `website_sections`,
+   `services`, `testimonials`, `faqs`, `stats`, `process_steps`,
+   `team_members`, `menu_categories`, `menu_items`, `gallery_images`, `leads`,
+   `lead_notes`, `site_visit_days` — cascades from it, so the event requests
+   the business collected go with it.
+4. The auth user is deleted through the Supabase dashboard or the Admin API.
+5. Uploaded images under `blob:<user-id>/` are removed from Blob storage.
+6. Backups age out on their own schedule within 30 days.
+
+This matters beyond tidiness: the product stores end-client PII — names,
+phone numbers, email addresses, event locations — that those clients gave to a
+caterer, not to us. Building this as a self-service flow is tracked work, and
+`/privacy` states the commitment in the meantime.
+
 ## On a phone, and on paper
 
 - A published site keeps a fixed action bar at the bottom of the viewport on phones — call, WhatsApp, and request a quote — replacing the single floating bubble, because those are the things a visitor came to do. It respects `env(safe-area-inset-bottom)`.
