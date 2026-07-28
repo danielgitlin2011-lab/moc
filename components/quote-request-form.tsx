@@ -5,9 +5,8 @@ import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useApp } from "./app-provider";
 import { Button, Field } from "./ui";
-import { uid } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const schema = z.object({
   customerName: z.string().min(2, "Please enter your name"),
@@ -33,40 +32,38 @@ const referralSources = ["Instagram", "Google search", "Referral from a friend",
 type QuoteFormData = z.infer<typeof schema>;
 type QuoteFormInput = z.input<typeof schema>;
 
-export function QuoteRequestForm({ compact = false }: { compact?: boolean }) {
-  const { setState } = useApp();
+export function QuoteRequestForm({ businessId, compact = false }: { businessId: string; compact?: boolean }) {
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<QuoteFormInput, unknown, QuoteFormData>({
     resolver: zodResolver(schema),
     defaultValues: { preferredContact: "Email" },
   });
 
   const onSubmit = async (values: QuoteFormData) => {
-    await new Promise(resolve => window.setTimeout(resolve, 450));
-    setState(current => ({
-      ...current,
-      leads: [{
-        id: uid("lead"),
-        customerName: values.customerName,
-        email: values.email,
-        phone: values.phone,
-        eventDate: values.eventDate,
-        eventTime: values.eventTime || "Not specified",
-        eventLocation: values.eventLocation,
-        eventType: values.eventType,
-        guestCount: values.guestCount,
-        budget: values.budget,
-        serviceStyle: values.serviceStyle || "Open to recommendations",
-        preferredMenu: values.preferredMenu || "Open to recommendations",
-        dietaryRequirements: values.dietaryRequirements || "None shared",
-        details: values.details,
-        preferredContact: values.preferredContact,
-        hearAboutUs: values.hearAboutUs || "Not shared",
-        receivedAt: new Date().toISOString().slice(0, 10),
-        status: "New",
-        notes: [],
-      }, ...current.leads],
-    }));
+    setSubmitError("");
+    const { error } = await createClient().from("leads").insert({
+      business_id: businessId,
+      customer_name: values.customerName,
+      email: values.email,
+      phone: values.phone,
+      event_date: values.eventDate,
+      event_time: values.eventTime || "Not specified",
+      event_location: values.eventLocation,
+      event_type: values.eventType,
+      guest_count: values.guestCount,
+      budget: values.budget,
+      service_style: values.serviceStyle || "Open to recommendations",
+      preferred_menu: values.preferredMenu || "Open to recommendations",
+      dietary_requirements: values.dietaryRequirements || "None shared",
+      details: values.details,
+      preferred_contact: values.preferredContact,
+      hear_about_us: values.hearAboutUs || "Not shared",
+    });
+    if (error) {
+      setSubmitError("Something went wrong sending your request. Please try again or contact us directly.");
+      return;
+    }
     reset();
     setSubmitted(true);
   };
@@ -85,6 +82,7 @@ export function QuoteRequestForm({ compact = false }: { compact?: boolean }) {
 
   return (
     <form className={`quote-form ${compact ? "compact" : ""}`} onSubmit={handleSubmit(onSubmit)} noValidate>
+      {submitError && <div className="form-alert">{submitError}</div>}
       <div className="form-grid">
         <Field label="Your name"><input {...register("customerName")} aria-invalid={!!errors.customerName} placeholder="Full name" /><FormError message={errors.customerName?.message} /></Field>
         <Field label="Email"><input type="email" {...register("email")} aria-invalid={!!errors.email} placeholder="you@example.com" /><FormError message={errors.email?.message} /></Field>

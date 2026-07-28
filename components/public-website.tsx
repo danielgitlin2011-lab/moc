@@ -26,10 +26,9 @@ import {
   X,
 } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
-import { useApp } from "./app-provider";
 import { QuoteRequestForm } from "./quote-request-form";
 import { cn, businessInitials, fontStack, yearsInBusiness } from "@/lib/utils";
-import type { GalleryImage, WebsiteSection } from "@/lib/types";
+import type { AppState, GalleryImage, WebsiteSection } from "@/lib/types";
 
 const socialGlyphs: Record<string, React.ReactNode> = {
   instagram: <><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5" /><circle cx="12" cy="12" r="3.9" /><circle cx="17.1" cy="6.9" r="1.1" fill="currentColor" stroke="none" /></>,
@@ -48,15 +47,18 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export function PublicWebsite({
+  state,
+  businessId,
   preview = false,
   editable = false,
   onSectionSelect,
 }: {
+  state: AppState;
+  businessId: string;
   preview?: boolean;
   editable?: boolean;
   onSectionSelect?: (id: string) => void;
 }) {
-  const { state } = useApp();
   const { business, theme, sections, services, testimonials, faqs, stats, processSteps, team, menuItems, categories, gallery } = state;
   const [mobileNav, setMobileNav] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -392,7 +394,7 @@ export function PublicWebsite({
                 {business.cancellationPolicy && <p><strong>Cancellation</strong>{business.cancellationPolicy}</p>}
               </div>
             </aside>
-            <QuoteRequestForm />
+            <QuoteRequestForm businessId={businessId} />
             {editButton("quote", "inquiry intro")}
           </section>
         );
