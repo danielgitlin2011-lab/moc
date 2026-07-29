@@ -1,8 +1,9 @@
 "use client";
 
-import { ImagePlus, LoaderCircle, UploadCloud, X } from "lucide-react";
+import { ImagePlus, Images, LoaderCircle, UploadCloud, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, sizedImage } from "@/lib/utils";
+import { imageBankFor, type ImageBankCategory } from "@/lib/image-bank";
 
 export function ImageUploader({
   value,
@@ -10,16 +11,21 @@ export function ImageUploader({
   label = "Upload image",
   hint = "JPG, PNG, WebP or GIF · up to 8 MB",
   compact = false,
+  category,
 }: {
   value?: string;
   onChange: (url: string) => void;
   label?: string;
   hint?: string;
   compact?: boolean;
+  /** Offers a "choose from our photo library" picker of stock photos suited to this field, for businesses that don't have their own shot yet. */
+  category?: ImageBankCategory;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const libraryImages = category ? imageBankFor(category) : [];
 
   const upload = async (file?: File) => {
     if (!file) return;
@@ -73,6 +79,22 @@ export function ImageUploader({
         </button>
       )}
       {error && <p className="upload-error" role="alert">{error}</p>}
+      {libraryImages.length > 0 && (
+        <div className="image-library">
+          <button type="button" className="image-library-toggle" onClick={() => setLibraryOpen(open => !open)}>
+            <Images size={14} /> {libraryOpen ? "Hide photo library" : value ? "Choose a different library photo" : "No photo yet? Choose from our library"}
+          </button>
+          {libraryOpen && (
+            <div className="image-library-grid">
+              {libraryImages.map(image => (
+                <button type="button" key={image} className={cn("image-library-item", value === image && "active")} onClick={() => { onChange(image); setLibraryOpen(false); }} aria-label="Use this library photo">
+                  <img src={sizedImage(image, 240)} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

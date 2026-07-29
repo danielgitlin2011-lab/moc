@@ -10,13 +10,20 @@ import { TemplateCard, templateNames } from "@/components/template-card";
 import { BrandMark, Button, Field } from "@/components/ui";
 import { businessInitials, cn, uid } from "@/lib/utils";
 import { ImageUploader } from "@/components/image-uploader";
+import { MAX_SITE_PAGES, resolveSitePages } from "@/lib/site-pages";
 import type { MenuItem } from "@/lib/types";
 import { SiteImage } from "@/components/site-image";
+
+const pageCountOptions = Array.from({ length: MAX_SITE_PAGES }, (_, index) => index + 1);
 
 const stepNames = ["Business", "Template", "Branding", "Menu", "Publish"];
 
 function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-+|-+$)/g, "") || "business";
+}
+
+function splitList(value: string) {
+  return value.split(",").map(entry => entry.trim()).filter(Boolean);
 }
 
 function blankMenuItem(): MenuItem {
@@ -165,16 +172,39 @@ export default function OnboardingPage() {
               <Field label="Service areas" hint="Separate areas with commas"><input value={business.serviceAreas} onChange={e => setBusiness({ ...business, serviceAreas: e.target.value })} /></Field>
               <Field label="Founded" hint="Drives the “years in business” badge"><input value={business.foundedYear} onChange={e => setBusiness({ ...business, foundedYear: e.target.value })} /></Field>
             </div>
+
+            <div className="onboarding-subhead"><strong>A few more details</strong><small>Optional — these personalize your site and save you edits later. You can always fill them in from Settings instead.</small></div>
+            <div className="form-grid">
+              <Field label="Street address"><input value={business.address} onChange={e => setBusiness({ ...business, address: e.target.value })} /></Field>
+              <Field label="Team size" hint="Shown in your About section"><input value={business.teamSize} onChange={e => setBusiness({ ...business, teamSize: e.target.value })} placeholder="18 chefs and service staff" /></Field>
+            </div>
+            <div className="form-grid">
+              <Field label="Minimum booking"><input value={business.minimumGuests} onChange={e => setBusiness({ ...business, minimumGuests: e.target.value })} placeholder="10 guests for drop-off, 30 for full service" /></Field>
+              <Field label="Booking notice"><input value={business.bookingNotice} onChange={e => setBusiness({ ...business, bookingNotice: e.target.value })} placeholder="Two weeks for dinners, three months for weddings" /></Field>
+            </div>
+            <Field label="Deposit policy"><textarea rows={3} value={business.depositPolicy} onChange={e => setBusiness({ ...business, depositPolicy: e.target.value })} /></Field>
+            <Field label="Cancellation policy"><textarea rows={3} value={business.cancellationPolicy} onChange={e => setBusiness({ ...business, cancellationPolicy: e.target.value })} /></Field>
+            <Field label="Travel policy" hint="Shown in your contact section"><textarea rows={3} value={business.travelPolicy} onChange={e => setBusiness({ ...business, travelPolicy: e.target.value })} /></Field>
+            <div className="form-grid">
+              <Field label="Languages you host in" hint="Separate with commas"><input value={business.languages.join(", ")} onChange={e => setBusiness({ ...business, languages: splitList(e.target.value) })} /></Field>
+              <Field label="Certifications" hint="Shown as trust chips in your About section"><input value={business.certifications.join(", ")} onChange={e => setBusiness({ ...business, certifications: splitList(e.target.value) })} /></Field>
+            </div>
+            <Field label="Awards and press" hint="The first entry appears on your hero badge"><input value={business.awards.join(", ")} onChange={e => setBusiness({ ...business, awards: splitList(e.target.value) })} /></Field>
           </div>}
 
-          {step === 2 && <div className="onboarding-step wide"><span className="step-kicker">02 · Your visual foundation</span><h1>Choose a template that fits your style.</h1><p>Every template is fully responsive and stays professionally designed as you customize it.</p><div className="onboarding-template-grid">{templateNames.map(value => <TemplateCard key={value} value={value} monogram={businessInitials(business.name)} selected={theme.template === value} onSelect={() => setTheme({ ...theme, template: value })} />)}</div></div>}
+          {step === 2 && <div className="onboarding-step wide"><span className="step-kicker">02 · Your visual foundation</span><h1>Choose a template that fits your style.</h1><p>Every template is fully responsive and stays professionally designed as you customize it.</p><div className="onboarding-template-grid">{templateNames.map(value => <TemplateCard key={value} value={value} monogram={businessInitials(business.name)} selected={theme.template === value} onSelect={() => setTheme({ ...theme, template: value })} />)}</div>
+            <Field label="How many pages should your website have?" hint="One page keeps everything on a single scroll. More pages split your content across its own addresses, like /menu or /contact.">
+              <div className="segmented-control page-count-control">{pageCountOptions.map(value => <button type="button" key={value} className={theme.pageCount === value ? "active" : ""} onClick={() => setTheme({ ...theme, pageCount: value })}>{value}</button>)}</div>
+            </Field>
+            <p className="page-count-preview">{resolveSitePages(defaultSections.map(section => section.id), theme.pageCount).map(page => page.label).join(" · ")}</p>
+          </div>}
 
           {step === 3 && <div className="onboarding-step brand-step"><div><span className="step-kicker">03 · Make it yours</span><h1>Shape your visual identity.</h1><p>Choose a refined starting palette and typography. You can revisit these choices anytime.</p>
             <div className="brand-controls"><div className="form-grid"><Field label="Primary color"><div className="color-control"><input type="color" value={theme.primary} onChange={e => setTheme({ ...theme, primary: e.target.value })} /><input value={theme.primary} onChange={e => setTheme({ ...theme, primary: e.target.value })} /></div></Field><Field label="Accent color"><div className="color-control"><input type="color" value={theme.accent} onChange={e => setTheme({ ...theme, accent: e.target.value })} /><input value={theme.accent} onChange={e => setTheme({ ...theme, accent: e.target.value })} /></div></Field></div>
               <Field label="Font pair"><select value={`${theme.headingFont}|${theme.bodyFont}`} onChange={e => { const [headingFont, bodyFont] = e.target.value.split("|"); setTheme({ ...theme, headingFont, bodyFont }); }}><option value="Cormorant|Inter">Cormorant + Inter</option><option value="Playfair|Source Sans">Playfair + Source Sans</option><option value="Fraunces|Inter">Fraunces + Inter</option><option value="Inter|Inter">Inter + Inter</option></select></Field>
               <Field label="Button style"><div className="segmented-control">{(["square", "soft", "pill"] as const).map(value => <button type="button" className={theme.buttonShape === value ? "active" : ""} key={value} onClick={() => setTheme({ ...theme, buttonShape: value })}>{value}</button>)}</div></Field>
               <Field label="Logo"><ImageUploader compact value={business.logo} onChange={logo => setBusiness({ ...business, logo })} label="Upload your logo" /></Field>
-              <Field label="Hero image"><ImageUploader compact value={theme.heroImage} onChange={heroImage => setTheme({ ...theme, heroImage })} label="Upload a hero image" /></Field>
+              <Field label="Hero image"><ImageUploader compact category="hero" value={theme.heroImage} onChange={heroImage => setTheme({ ...theme, heroImage })} label="Upload a hero image" /></Field>
               <Field label="Or paste a hero image URL"><input value={theme.heroImage} onChange={e => setTheme({ ...theme, heroImage: e.target.value })} /></Field>
             </div></div>
             <div className="mini-live-preview" style={previewStyle}><div className="mini-browser-bar"><span /><span /><span /></div><SiteImage src={theme.heroImage} alt="Live website preview" width={800} /><div><small>{business.name}</small><h2>{business.tagline}</h2><p>{business.description.slice(0, 96)}…</p><b style={{ borderRadius: theme.buttonShape === "pill" ? 99 : theme.buttonShape === "soft" ? 6 : 0 }}>Plan your event</b></div><em>Live preview</em></div>

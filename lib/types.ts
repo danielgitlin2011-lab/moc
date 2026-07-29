@@ -76,6 +76,8 @@ export interface BusinessTheme {
   serviceLayout: "cards" | "rows" | "tiles";
   menuItemLimit: number;
   galleryLimit: number;
+  /** How many pages the published site is split across, from 1 (single scrolling page) to 5. */
+  pageCount: number;
 }
 
 export interface WebsiteSection {

@@ -67,6 +67,7 @@ export const defaultTheme: BusinessTheme = {
   serviceLayout: "cards",
   menuItemLimit: 6,
   galleryLimit: 7,
+  pageCount: 1,
 };
 
 export const defaultSections: WebsiteSection[] = [

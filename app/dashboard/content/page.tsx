@@ -241,7 +241,7 @@ function renderFields(tab: CollectionKey, item: { id: string }, update: (id: str
             <Field label="Guest capacity"><input value={service.capacity} onChange={event => set({ capacity: event.target.value })} placeholder="40–350 guests" /></Field>
           </div>
           <Field label="What is included" hint="Separate each point with a comma"><input value={service.highlights.join(", ")} onChange={event => set({ highlights: splitList(event.target.value) })} placeholder="Tasting for two, Full service staff" /></Field>
-          <Field label="Service image"><ImageUploader compact value={service.image} onChange={image => set({ image })} /></Field>
+          <Field label="Service image"><ImageUploader compact category="service" value={service.image} onChange={image => set({ image })} /></Field>
         </>
       );
     }

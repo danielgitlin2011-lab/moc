@@ -31,6 +31,7 @@ import { SiteChrome } from "./site-chrome";
 import { SiteImage } from "./site-image";
 import { useModalBehavior } from "./use-modal-behavior";
 import { cn, businessInitials, fontStack, safeHttpUrl, yearsInBusiness } from "@/lib/utils";
+import { findPageForSection, resolveSitePages, sitePagePath } from "@/lib/site-pages";
 import type { AppState, GalleryImage, WebsiteSection } from "@/lib/types";
 
 const socialGlyphs: Record<string, React.ReactNode> = {
@@ -55,12 +56,15 @@ export function PublicWebsite({
   preview = false,
   editable = false,
   onSectionSelect,
+  pageSlug = "",
 }: {
   state: AppState;
   businessId: string;
   preview?: boolean;
   editable?: boolean;
   onSectionSelect?: (id: string) => void;
+  /** Which split-out page to render (see lib/site-pages.ts). Ignored in preview, which always shows every section on one canvas. */
+  pageSlug?: string;
 }) {
   const { business, theme, sections, services, testimonials, faqs, stats, processSteps, team, menuItems, categories, gallery } = state;
   const [mobileNav, setMobileNav] = useState(false);
@@ -68,6 +72,16 @@ export function PublicWebsite({
   const [activeCollection, setActiveCollection] = useState("all");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const sectionMap = useMemo(() => Object.fromEntries(sections.map(section => [section.id, section])), [sections]);
+  const sitePages = useMemo(() => resolveSitePages(sections.map(section => section.id), theme.pageCount || 1), [sections, theme.pageCount]);
+  const isMultiPage = !preview && sitePages.length > 1;
+  const currentPage = isMultiPage ? (sitePages.find(page => page.slug === pageSlug) ?? sitePages[0]) : null;
+  const sectionHref = useCallback((id: string) => {
+    if (!currentPage) return `#${id}`;
+    const targetPage = findPageForSection(sitePages, id);
+    if (!targetPage || targetPage.slug === currentPage.slug) return `#${id}`;
+    return `${sitePagePath(business.slug, targetPage.slug)}#${id}`;
+  }, [currentPage, sitePages, business.slug]);
+  const homePath = sitePagePath(business.slug, "");
 
   const radius = theme.imageCorners === "square" ? "0px" : theme.imageCorners === "soft" ? "10px" : "28px";
   const buttonRadius = theme.buttonShape === "square" ? "0px" : theme.buttonShape === "soft" ? "7px" : "999px";
@@ -164,8 +178,8 @@ export function PublicWebsite({
               <h1>{section.title}</h1>
               <p>{section.body}</p>
               <div className="hero-actions-row">
-                <a className="public-cta" href="#quote">{section.ctaLabel || "Plan your event"} <ArrowRight size={17} /></a>
-                <a className="public-text-link" href="#menus">{section.secondaryCtaLabel || "Explore our menus"}</a>
+                <a className="public-cta" href={sectionHref("quote")}>{section.ctaLabel || "Plan your event"} <ArrowRight size={17} /></a>
+                <a className="public-text-link" href={sectionHref("menus")}>{section.secondaryCtaLabel || "Explore our menus"}</a>
               </div>
               <ul className="hero-facts">
                 {years > 0 && <li><Clock size={13} /> {years} years in business</li>}
@@ -198,7 +212,7 @@ export function PublicWebsite({
               {business.certifications.length > 0 && (
                 <ul className="credential-list">{business.certifications.map(item => <li key={item}><BadgeCheck size={14} /> {item}</li>)}</ul>
               )}
-              <a href="#services">{section.ctaLabel || "Our approach"} <ArrowRight size={15} /></a>
+              <a href={sectionHref("services")}>{section.ctaLabel || "Our approach"} <ArrowRight size={15} /></a>
               <div className="signature">{business.name}</div>
             </div>
             <div className="about-images">
@@ -230,7 +244,7 @@ export function PublicWebsite({
                       {service.priceFrom && <span><Utensils size={12} /> {service.priceFrom}</span>}
                       {service.capacity && <span><Users size={12} /> {service.capacity}</span>}
                     </div>
-                    <a href="#quote">Plan this gathering <ArrowRight size={14} /></a>
+                    <a href={sectionHref("quote")}>Plan this gathering <ArrowRight size={14} /></a>
                   </div>
                 </article>
               ))}
@@ -301,7 +315,7 @@ export function PublicWebsite({
             </div>
             <div className="menu-footer-row">
               <div className="menu-promise"><Check size={18} /><span>Every menu can be tailored to your event, dietary needs, and style of service.</span></div>
-              <a className="public-outline-cta" href="#quote">{section.ctaLabel || "Build your menu"} <ArrowRight size={15} /></a>
+              <a className="public-outline-cta" href={sectionHref("quote")}>{section.ctaLabel || "Build your menu"} <ArrowRight size={15} /></a>
             </div>
             {editButton("menus", "menus")}
           </section>
@@ -449,24 +463,34 @@ export function PublicWebsite({
       className={cn("public-site", `template-${theme.template}`, `header-${theme.headerStyle}`, preview && "is-preview", editable && "is-editable")}
       style={style}
     >
-      <a className="skip-link" href="#quote">Skip to the inquiry form</a>
+      <a className="skip-link" href={sectionHref("quote")}>Skip to the inquiry form</a>
       {theme.showAnnouncement && theme.announcementText && (
-        <div className="public-announcement"><span>{theme.announcementText}</span><a href="#quote">Check availability <ArrowRight size={12} /></a></div>
+        <div className="public-announcement"><span>{theme.announcementText}</span><a href={sectionHref("quote")}>Check availability <ArrowRight size={12} /></a></div>
       )}
       <header className={cn("public-header", `nav-${theme.navigation}`, theme.showAnnouncement && "with-announcement")}>
-        <Link href="#top" className="public-logo">
+        <Link href={currentPage ? homePath : "#top"} className="public-logo">
           {business.logo ? <SiteImage src={business.logo} alt={`${business.name} logo`} width={200} priority /> : <span>{initials}</span>}
           <strong>{business.name}</strong>
         </Link>
         <nav id="site-navigation" className={cn(mobileNav && "open")} aria-label="Website navigation">
-          {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={`#${id}`} onClick={() => setMobileNav(false)}>{sectionMap[id].label}</a>)}
+          {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={sectionHref(id)} onClick={() => setMobileNav(false)}>{sectionMap[id].label}</a>)}
           <a className="mobile-nav-phone" href={`tel:${business.phone}`}>{business.phone}</a>
         </nav>
-        <a className="public-cta desktop-public-cta" href="#quote">{sectionMap.quote?.ctaLabel || "Request a quote"}</a>
+        <a className="public-cta desktop-public-cta" href={sectionHref("quote")}>{sectionMap.quote?.ctaLabel || "Request a quote"}</a>
         <button className="public-menu" onClick={() => setMobileNav(!mobileNav)} aria-label={mobileNav ? "Close navigation" : "Open navigation"} aria-expanded={mobileNav} aria-controls="site-navigation">{mobileNav ? <X /> : <Menu />}</button>
       </header>
 
-      {sections.filter(section => section.visible && section.id !== "footer").map(section => <Fragment key={section.id}>{renderSection(section)}</Fragment>)}
+      {currentPage && currentPage.slug !== "" && (
+        <header className="public-page-banner">
+          <SiteImage src={theme.heroImage} fallback={gallery[0]?.url} alt="" width={1800} />
+          <div>
+            <a href={homePath}>{business.name}</a>
+            <h1>{currentPage.label}</h1>
+          </div>
+        </header>
+      )}
+
+      {sections.filter(section => section.visible && section.id !== "footer" && (!currentPage || currentPage.sectionIds.includes(section.id))).map(section => <Fragment key={section.id}>{renderSection(section)}</Fragment>)}
 
       {sectionMap.footer?.visible && (
         <footer className="public-footer">
@@ -484,8 +508,8 @@ export function PublicWebsite({
           </div>
           <div>
             <strong>Explore</strong>
-            {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={`#${id}`}>{sectionMap[id].label}</a>)}
-            <a href="#quote">{sectionMap.quote?.ctaLabel || "Plan your event"}</a>
+            {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={sectionHref(id)}>{sectionMap[id].label}</a>)}
+            <a href={sectionHref("quote")}>{sectionMap.quote?.ctaLabel || "Plan your event"}</a>
           </div>
           <div>
             <strong>Contact</strong>
@@ -511,7 +535,7 @@ export function PublicWebsite({
       {/* Scroll-linked chrome is measured against the window, so it only makes
           sense on the real site — not inside the dashboard's preview frame. */}
       {!preview && (
-        <SiteChrome phone={business.phone} whatsapp={business.whatsapp} quoteLabel={sectionMap.quote?.ctaLabel || "Request a quote"} />
+        <SiteChrome phone={business.phone} whatsapp={business.whatsapp} quoteLabel={sectionMap.quote?.ctaLabel || "Request a quote"} quoteHref={sectionHref("quote")} />
       )}
 
       {activeImage && lightboxIndex !== null && (

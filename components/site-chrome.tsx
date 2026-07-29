@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * through the story they are, keep the way back to the top within reach, and
  * on a phone keep calling and enquiring one thumb away at all times.
  */
-export function SiteChrome({ phone, whatsapp, quoteLabel }: { phone: string; whatsapp: string; quoteLabel: string }) {
+export function SiteChrome({ phone, whatsapp, quoteLabel, quoteHref = "#quote" }: { phone: string; whatsapp: string; quoteLabel: string; quoteHref?: string }) {
   const [progress, setProgress] = useState(0);
   const [past, setPast] = useState(false);
 
@@ -67,7 +67,7 @@ export function SiteChrome({ phone, whatsapp, quoteLabel }: { phone: string; wha
         {whatsapp && (
           <a href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"><MessageCircle size={17} /><span>WhatsApp</span></a>
         )}
-        <a className="mobile-action-primary" href="#quote"><CalendarCheck size={17} /><span>{quoteLabel}</span></a>
+        <a className="mobile-action-primary" href={quoteHref}><CalendarCheck size={17} /><span>{quoteLabel}</span></a>
       </div>
     </>
   );

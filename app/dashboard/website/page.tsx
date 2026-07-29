@@ -12,8 +12,11 @@ import { defaultSections } from "@/lib/default-theme";
 import { ImageUploader } from "@/components/image-uploader";
 import { createClient } from "@/lib/supabase/client";
 import { sectionToRow } from "@/lib/supabase/mappers";
+import { MAX_SITE_PAGES, resolveSitePages } from "@/lib/site-pages";
 import type { Json } from "@/lib/supabase/types";
 import type { BusinessTheme, WebsiteSection } from "@/lib/types";
+
+const pageCountOptions = Array.from({ length: MAX_SITE_PAGES }, (_, index) => index + 1);
 
 const collectionSections: Record<string, string> = {
   stats: "Manage your highlights",
@@ -92,6 +95,11 @@ export default function WebsiteEditorPage() {
       <div className="mobile-editor-tabs"><button className={mobileTab === "edit" ? "active" : ""} onClick={() => setMobileTab("edit")}>Edit</button><button className={mobileTab === "preview" ? "active" : ""} onClick={() => setMobileTab("preview")}>Preview</button></div>
       <div className="website-editor-layout">
         <div className={cn("section-list-panel", mobileTab !== "edit" && "mobile-hidden")}>
+          <div className="page-count-card">
+            <div><strong>Number of pages</strong><small>Split your site across separate pages, or keep it as one scroll.</small></div>
+            <div className="segmented-control page-count-control">{pageCountOptions.map(value => <button type="button" key={value} className={state.theme.pageCount === value ? "active" : ""} onClick={() => updateTheme({ pageCount: value })}>{value}</button>)}</div>
+            <p className="page-count-preview">{resolveSitePages(state.sections.map(section => section.id), state.theme.pageCount || 1).map(page => page.label).join(" · ")}</p>
+          </div>
           <div className="editor-intro"><h2>Page sections</h2><p>Choose a section to edit, show, hide, or reorder.</p></div>
           <div className="section-list">{state.sections.map((section) => <button key={section.id} className={cn(activeId === section.id && "active")} onClick={() => setActiveId(section.id)}><GripVertical size={16} /><span><strong>{section.label}</strong><small>{section.visible ? "Visible" : "Hidden"}</small></span>{section.visible ? <Eye size={15} /> : <EyeOff size={15} />}{activeId === section.id && <i />}</button>)}</div>
           <div className="section-editor">
@@ -102,8 +110,8 @@ export default function WebsiteEditorPage() {
             {active.ctaLabel !== undefined && <Field label="Primary button text"><input value={active.ctaLabel} onChange={e => updateSection({ ctaLabel: e.target.value })} /></Field>}
             {active.secondaryCtaLabel !== undefined && <Field label="Secondary button text"><input value={active.secondaryCtaLabel} onChange={e => updateSection({ secondaryCtaLabel: e.target.value })} /></Field>}
             {collectionSections[activeId] && <Link className="editor-jump-link" href="/dashboard/content"><ListPlus size={15} /><span><strong>{collectionSections[activeId]}</strong><small>The headline above is section copy. Edit the entries themselves in Content.</small></span><ArrowRight size={14} /></Link>}
-            {activeId === "hero" && <div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Hero image</strong><small>Upload a wide, high-resolution event image.</small></span></div><ImageUploader compact value={state.theme.heroImage} onChange={heroImage => updateTheme({ heroImage })} /></div>}
-            {activeId === "about" && <div className="editor-media-stack"><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Chef or team image</strong><small>The main portrait in your story section.</small></span></div><ImageUploader compact value={state.theme.aboutImage} onChange={aboutImage => updateTheme({ aboutImage })} /></div><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Supporting detail image</strong><small>Food, tablescape, or behind-the-scenes detail.</small></span></div><ImageUploader compact value={state.theme.detailImage} onChange={detailImage => updateTheme({ detailImage })} /></div></div>}
+            {activeId === "hero" && <div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Hero image</strong><small>Upload a wide, high-resolution event image.</small></span></div><ImageUploader compact category="hero" value={state.theme.heroImage} onChange={heroImage => updateTheme({ heroImage })} /></div>}
+            {activeId === "about" && <div className="editor-media-stack"><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Chef or team image</strong><small>The main portrait in your story section.</small></span></div><ImageUploader compact category="about" value={state.theme.aboutImage} onChange={aboutImage => updateTheme({ aboutImage })} /></div><div className="editor-media-block"><div><ImagePlus size={16} /><span><strong>Supporting detail image</strong><small>Food, tablescape, or behind-the-scenes detail.</small></span></div><ImageUploader compact category="about" value={state.theme.detailImage} onChange={detailImage => updateTheme({ detailImage })} /></div></div>}
             <div className="section-tools"><div><button onClick={() => move(-1)} disabled={state.sections[0].id === activeId} title="Move section up"><ChevronUp size={16} /> Move up</button><button onClick={() => move(1)} disabled={state.sections.at(-1)?.id === activeId} title="Move section down"><ChevronDown size={16} /> Move down</button></div><button onClick={resetSection}><RotateCcw size={15} /> Reset content</button></div>
           </div>
         </div>

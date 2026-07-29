@@ -11,14 +11,10 @@ import { ImageUploader, uploadImageFile } from "@/components/image-uploader";
 import { createClient } from "@/lib/supabase/client";
 import { galleryImageToRow } from "@/lib/supabase/mappers";
 import { SiteImage } from "@/components/site-image";
+import { imageBankFor } from "@/lib/image-bank";
 
 const galleryCategories = ["Weddings", "Private dinners", "Corporate events", "Shabbat", "Food presentation"];
-const seeded = [
-  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=80",
-];
+const seeded = imageBankFor("gallery");
 
 export default function GalleryPage() {
   const { state, setState, businessId, notify } = useApp();
