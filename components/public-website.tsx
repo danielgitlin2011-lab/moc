@@ -77,11 +77,16 @@ export function PublicWebsite({
   const currentPage = isMultiPage ? (sitePages.find(page => page.slug === pageSlug) ?? sitePages[0]) : null;
   const sectionHref = useCallback((id: string) => {
     if (!currentPage) return `#${id}`;
+    // The current page's own copy of a section always wins — some sections
+    // (stats, faq) intentionally appear on more than one dedicated page.
+    if (currentPage.sectionIds.includes(id)) return `#${id}`;
     const targetPage = findPageForSection(sitePages, id);
-    if (!targetPage || targetPage.slug === currentPage.slug) return `#${id}`;
+    if (!targetPage) return `#${id}`;
     return `${sitePagePath(business.slug, targetPage.slug)}#${id}`;
   }, [currentPage, sitePages, business.slug]);
   const homePath = sitePagePath(business.slug, "");
+  // A page only earns a nav link once it actually has something visible on it.
+  const navPages = useMemo(() => sitePages.filter(page => page.sectionIds.some(id => sectionMap[id]?.visible)), [sitePages, sectionMap]);
 
   const radius = theme.imageCorners === "square" ? "0px" : theme.imageCorners === "soft" ? "10px" : "28px";
   const buttonRadius = theme.buttonShape === "square" ? "0px" : theme.buttonShape === "soft" ? "7px" : "999px";
@@ -473,7 +478,9 @@ export function PublicWebsite({
           <strong>{business.name}</strong>
         </Link>
         <nav id="site-navigation" className={cn(mobileNav && "open")} aria-label="Website navigation">
-          {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={sectionHref(id)} onClick={() => setMobileNav(false)}>{sectionMap[id].label}</a>)}
+          {currentPage
+            ? navPages.map(page => <a key={page.slug || "home"} href={sitePagePath(business.slug, page.slug)} aria-current={page.slug === currentPage.slug ? "page" : undefined} onClick={() => setMobileNav(false)}>{page.label}</a>)
+            : anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={sectionHref(id)} onClick={() => setMobileNav(false)}>{sectionMap[id].label}</a>)}
           <a className="mobile-nav-phone" href={`tel:${business.phone}`}>{business.phone}</a>
         </nav>
         <a className="public-cta desktop-public-cta" href={sectionHref("quote")}>{sectionMap.quote?.ctaLabel || "Request a quote"}</a>
@@ -508,7 +515,9 @@ export function PublicWebsite({
           </div>
           <div>
             <strong>Explore</strong>
-            {anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={sectionHref(id)}>{sectionMap[id].label}</a>)}
+            {currentPage
+              ? navPages.map(page => <a key={page.slug || "home"} href={sitePagePath(business.slug, page.slug)}>{page.label}</a>)
+              : anchorSections.map(id => sectionMap[id]?.visible && <a key={id} href={sectionHref(id)}>{sectionMap[id].label}</a>)}
             <a href={sectionHref("quote")}>{sectionMap.quote?.ctaLabel || "Plan your event"}</a>
           </div>
           <div>
