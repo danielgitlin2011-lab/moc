@@ -1433,7 +1433,7 @@ h1, h2, h3, p { margin-top: 0; }
 /* Header */
 .public-header nav a { position: relative; padding-bottom: 3px; }
 .public-header nav a:after { content: ""; position: absolute; left: 0; right: 100%; bottom: 0; height: 1px; background: currentColor; opacity: .75; transition: right .25s ease; }
-.public-header nav a:hover:after { right: 0; }
+.public-header nav a:hover:after, .public-header nav a[aria-current="page"]:after { right: 0; }
 .nav-classic .public-header nav { margin-left: 45px; margin-right: auto; }
 .nav-centered .public-logo { flex: 1; }
 
